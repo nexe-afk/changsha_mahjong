@@ -12,7 +12,7 @@ class GameEngine {
   }
 
   start() {
-    __startGame();
+    startGame();
     this.app.ticker.add(() => {
       this.scene.renderScores();
       this.scene.highlightPlayer(gameState.currentPlayer);
@@ -27,12 +27,11 @@ function updateUI() {
   const scene = window._engine?.scene;
   if (!scene) return;
   scene.cleanTiles();
-
   for (let i = 0; i < 4; i++) {
     scene.renderHand(i, gameState.players[i].hand, i === 0, i === 0 ? gameState.selectedTile : -1);
     scene.renderMelons(i, gameState.players[i].melons);
   }
-  scene.renderCenterDiscard(gameState.lastDiscard, gameState.lastDiscardPlayer);
+  scene.renderCenterDiscard(gameState.lastDiscard);
 }
 
 function selectTile(playerIdx) {
@@ -58,7 +57,6 @@ function showPlayerActions(actions, tile) {
   const allActions = [];
   for (const [, acts] of Object.entries(actions)) allActions.push(...acts);
   const unique = [...new Set(allActions)];
-
   sound.click();
   scene.showActions(unique, (action) => {
     gameState.turnPhase = 'idle';
@@ -77,26 +75,19 @@ function showPlayerActions(actions, tile) {
 function showHuModal(playerIdx, type) {
   gameState.huCount++;
   gameState.huPlayers.push(playerIdx);
-
   const player = gameState.players[playerIdx];
   const zhong = countZhong(player.hand);
   const huTypes = getHuType(player.hand, player.melons);
   const birds = drawBirds(gameState.wall, RULES.BIRD_COUNT);
   const multiplier = calcMultiplier(huTypes, zhong, birds.multiplier);
-
   player.score += multiplier;
 
-  // 🎆 三波粒子庆祝 + 音效
   const scene = window._engine?.scene;
   if (scene) {
     Anim.celebrate(scene.layers.particles, scene.W / 2, scene.H / 2);
     setTimeout(() => Anim.celebrate(scene.layers.particles, scene.W * 0.3, scene.H * 0.3), 400);
     setTimeout(() => Anim.celebrate(scene.layers.particles, scene.W * 0.7, scene.H * 0.7), 800);
-
-    // 分数弹出
-    Anim.scorePopup(scene.layers.particles, scene.W / 2, scene.H / 2 - 140,
-      `+${multiplier}`, 0xf1c40f);
-
+    Anim.scorePopup(scene.layers.particles, scene.W / 2, scene.H / 2 - 140, `+${multiplier}`, 0xf1c40f);
     scene.showModal(
       `🎉 ${type}！`,
       [
@@ -123,31 +114,19 @@ function showHuModal(playerIdx, type) {
 function endGame() {
   gameState.gameOver = true;
   setStatus('🏆 游戏结束！');
-
   const scene = window._engine?.scene;
   if (scene) {
     for (let i = 0; i < 3; i++)
-      setTimeout(() => Anim.celebrate(
-        scene.layers.particles,
-        scene.W * (0.2 + 0.6 * Math.random()),
-        scene.H * (0.2 + 0.6 * Math.random())
-      ), i * 400);
-
+      setTimeout(() => Anim.celebrate(scene.layers.particles, scene.W * (0.2 + 0.6 * Math.random()), scene.H * (0.2 + 0.6 * Math.random())), i * 400);
     setTimeout(() => {
-      const scores = gameState.players.map(
-        (p, i) => `玩家${i + 1}${i === 0 ? ' (你)' : ''}: ${p.score} 分`
-      );
-      scene.showModal('🏆 游戏结束', scores, '再来一局', () => {
-        scene.cleanTiles();
-        __startGame();
-      });
+      const scores = gameState.players.map((p, i) => `玩家${i + 1}${i === 0 ? ' (你)' : ''}: ${p.score} 分`);
+      scene.showModal('🏆 游戏结束', scores, '再来一局', () => { scene.cleanTiles(); startGame(); });
     }, 1500);
   }
 }
 
 // ===== 启动 =====
-const __startGame = startGame;
-startGame = function() {
+function startGame() {
   for (const p of gameState.players) {
     p.hand = []; p.melons = []; p.discards = []; p.score = 0;
   }
@@ -171,10 +150,9 @@ startGame = function() {
   setStatus('🎯 长沙红中麻将 · 点击选牌打出');
   checkTianHu(0);
   gameState.currentPlayer = 0;
-
   bindTileClicks();
   bindKeyboard();
-};
+}
 
 // ===== 键鼠绑定 =====
 function bindTileClicks() {
@@ -185,14 +163,11 @@ function bindTileClicks() {
   layer.removeAllListeners('pointerdown');
   layer.on('pointerdown', (e) => {
     if (gameState.currentPlayer !== 0 || gameState.isProcessing) return;
-
     let target = e.target;
-    while (target && (target.tileIndex === undefined || !target.draggable))
-      target = target.parent;
+    while (target && (target.tileIndex === undefined || !target.draggable)) target = target.parent;
     if (!target || target.tileIndex === undefined) return;
-
     if (gameState.selectedTile === target.tileIndex) {
-      playTile(0, target.tileIndex);  // 二次点击出牌
+      playTile(0, target.tileIndex);
     } else {
       gameState.selectedTile = target.tileIndex;
       sound.click();
@@ -208,24 +183,18 @@ function bindKeyboard() {
 
 function handleKeyDown(e) {
   if (gameState.currentPlayer !== 0 || gameState.isProcessing) return;
-
   const hand = gameState.players[0].hand;
-
   if (e.key === 'Enter' || e.key === ' ') {
     e.preventDefault();
-    if (gameState.selectedTile !== null) {
-      playTile(0, gameState.selectedTile);
-    }
+    if (gameState.selectedTile !== null) playTile(0, gameState.selectedTile);
     return;
   }
-
   if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
     e.preventDefault();
     gameState.selectedTile = Math.max(0, (gameState.selectedTile || 0) - 1);
     updateUI();
     return;
   }
-
   if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
     e.preventDefault();
     gameState.selectedTile = Math.min(hand.length - 1, (gameState.selectedTile || 0) + 1);
@@ -233,40 +202,3 @@ function handleKeyDown(e) {
     return;
   }
 }
-
-// ===== 重写出牌（API 可覆盖） =====
-const __playTile = playTile;
-playTile = function(playerIdx, handIdx) {
-  gameState.isProcessing = true;
-  const player = gameState.players[playerIdx];
-  const tile = player.hand.splice(handIdx, 1)[0];
-
-  player.discards.push(tile);
-  gameState.lastDiscard = tile;
-  gameState.lastDiscardPlayer = playerIdx;
-  gameState.selectedTile = null;
-
-  setStatus(`玩家${playerIdx + 1} 打出 ${decodeTile(tile).name}`);
-  updateUI();
-
-  const actions = detectActions(playerIdx, tile);
-
-  if (Object.keys(actions).length > 0) {
-    if (playerIdx !== 0) {
-      setTimeout(() => {
-        for (const pIdx of Object.keys(actions)) {
-          if (aiDecideAction(parseInt(pIdx), tile, actions[pIdx]) === 'hu') {
-            handleHu(parseInt(pIdx), tile);
-            return;
-          }
-        }
-        nextTurn((playerIdx + 1) % 4);
-      }, 800);
-    } else {
-      gameState.turnPhase = 'waiting_action';
-      showPlayerActions(actions, tile);
-    }
-  } else {
-    setTimeout(() => nextTurn((playerIdx + 1) % 4), 300);
-  }
-};

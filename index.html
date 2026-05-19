@@ -41,15 +41,15 @@
   <script src="js/ai.js"></script>
   <script src="js/rule.js"></script>
 
-  <!-- 引擎层 -->
+  <!-- 引擎层：按依赖顺序加载 -->
   <script src="engine/sound.js"></script>
   <script src="engine/tile.js"></script>
+  <script src="engine/animation.js"></script>  <!-- scenes.js 依赖 Anim -->
   <script src="engine/renderer.js"></script>
   <script src="engine/scenes.js"></script>
-  <script src="engine/animation.js"></script>
   <script src="engine/flow.js"></script>
 
-  <!-- 游戏流程引擎 -->
+  <!-- 游戏流程引擎（覆盖渲染函数） -->
   <script src="engine/game_engine.js"></script>
 
   <script>
