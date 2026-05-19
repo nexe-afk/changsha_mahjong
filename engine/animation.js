@@ -1,7 +1,7 @@
-// ===== 🎬 专业级动画系统 =====
+// ===== 🎬 专业动画（Pomax 风格） =====
+// 参考 Pomax/mahjong 的方向性丢弃动画
 
 class Anim {
-  // ===== 缓动函数库 =====
   static ease = {
     outCubic: t => 1 - Math.pow(1 - t, 3),
     outBack: t => 1 + 2.70158 * Math.pow(t - 1, 3) + 1.70158 * Math.pow(t - 1, 2),
@@ -18,16 +18,12 @@ class Anim {
     inOutSine: t => -(Math.cos(Math.PI * t) - 1) / 2,
   };
 
-  // ===== 通用缓动 =====
   static tween(obj, props, duration = 300, easing = 'outCubic') {
     return new Promise(resolve => {
       const start = {};
-      for (const key of Object.keys(props)) {
-        start[key] = obj[key];
-      }
+      for (const key of Object.keys(props)) start[key] = obj[key];
       const startTime = performance.now();
       const easeFn = Anim.ease[easing] || Anim.ease.outCubic;
-
       const tick = () => {
         const t = Math.min((performance.now() - startTime) / duration, 1);
         const e = easeFn(t);
@@ -35,55 +31,52 @@ class Anim {
           obj[key] = start[key] + (endVal - start[key]) * e;
         }
         if (t < 1) requestAnimationFrame(tick);
-        else { resolve(); }
+        else resolve();
       };
       tick();
     });
   }
 
-  // ===== 🃏 发牌动画（牌从中心飞到各玩家位置） =====
-  static async dealTiles(stage, playerPositions) {
-    const promises = [];
-    for (let p = 0; p < 4; p++) {
-      const hand = gameState.players[p].hand;
-      const [cx, cy] = playerPositions[p] || [0, 0];
+  /** 🃏 Pomax 风格：方向性丢弃动画
+   *  玩家0(底)→向上飞，玩家1(右)→向左飞
+   *  玩家2(顶)→向下飞，玩家3(左)→向右飞
+   */
+  static async discardTile(tile, playerIdx, centerX, centerY, tileW, tileH) {
+    // 按玩家方向计算初始位置
+    const offsets = {
+      0: { x: 0, y: 120 },  // 底部 → 向上
+      1: { x: -100, y: 0 }, // 右侧 → 向左
+      2: { x: 0, y: -100 }, // 顶部 → 向下
+      3: { x: 100, y: 0 },  // 左侧 → 向右
+    };
+    const off = offsets[playerIdx] || offsets[0];
+    const startX = centerX + off.x;
+    const startY = centerY + off.y;
 
-      for (let i = 0; i < hand.length; i++) {
-        // 在中心创建牌，然后飞到玩家位置
-        // 实际由 GameScene 的 dealAnimation 实现
-        await Anim.sleep(40);
-      }
-    }
-  }
-
-  static sleep(ms) {
-    return new Promise(r => setTimeout(r, ms));
-  }
-
-  // ===== 🃏 出牌抛物线动画 =====
-  static async discardFly(tile, fromX, fromY, toX, toY) {
-    tile.x = fromX;
-    tile.y = fromY;
+    tile.x = startX;
+    tile.y = startY;
+    tile.scale.set(1.1);
     tile.alpha = 1;
-    tile.scale.set(0.9);
     tile.zIndex = 999;
 
+    sound.discard();
+
     const startTime = performance.now();
-    const duration = 280;
+    const duration = 350;
 
     return new Promise(resolve => {
       const tick = () => {
         const t = Math.min((performance.now() - startTime) / duration, 1);
         const e = Anim.ease.outCubic(t);
-        tile.x = fromX + (toX - fromX) * e;
-        tile.y = fromY + (toY - fromY) * e - Math.sin(t * Math.PI) * 25;
-        tile.scale.set(0.9 + Math.sin(t * Math.PI) * 0.15);
-        tile.rotation = Math.sin(t * Math.PI * 2) * 0.04;
+        tile.x = startX + (centerX - startX) * e;
+        tile.y = startY + (centerY - startY) * e - Math.sin(t * Math.PI) * 15;
+        tile.scale.set(1.1 - Math.sin(t * Math.PI) * 0.15);
+        tile.rotation = Math.sin(t * Math.PI * 2) * 0.03;
 
         if (t < 1) requestAnimationFrame(tick);
         else {
-          tile.x = toX;
-          tile.y = toY;
+          tile.x = centerX;
+          tile.y = centerY;
           tile.scale.set(1);
           tile.rotation = 0;
           tile.zIndex = 0;
@@ -94,58 +87,71 @@ class Anim {
     });
   }
 
-  // ===== ✋ 碰牌收集动画 =====
-  static async collectPung(tiles, targetX, targetY) {
-    const promises = tiles.map((tile, i) => {
-      const tx = targetX + i * (TILE.SMALL_W - 3);
-      const ty = targetY;
-      return Anim.tween(tile, { x: tx, y: ty }, 200, 'outBack');
-    });
+  /** ✋ 碰牌聚集动画 */
+  static async collect(tiles, targetX, targetY) {
+    sound.peng();
+    const promises = tiles.map((tile, i) =>
+      Anim.tween(tile, {
+        x: targetX + i * (TILE.SMALL_W - 3),
+        y: targetY,
+      }, 200, 'outBack')
+    );
     await Promise.all(promises);
   }
 
-  // ===== 🎆 胡牌粒子庆祝 =====
-  static celebrate(container, x, y) {
-    const colors = [0xf1c40f, 0xe74c3c, 0x3498db, 0x2ecc71, 0xe67e22, 0x9b59b6, 0x1abc9c];
+  /** 📢 杠牌聚集 */
+  static async collectGang(tiles, targetX, targetY) {
+    sound.gang();
+    const promises = tiles.map((tile, i) =>
+      Anim.tween(tile, {
+        x: targetX + i * (TILE.SMALL_W - 3),
+        y: targetY,
+      }, 250, 'outBack')
+    );
+    await Promise.all(promises);
+  }
 
-    for (let i = 0; i < 30; i++) {
-      const isStar = Math.random() > 0.7;
+  /** 🎆 胡牌粒子效果（加强版） */
+  static celebrate(container, x, y) {
+    sound.hu();
+
+    const colors = [0xf1c40f, 0xe74c3c, 0x3498db, 0x2ecc71, 0xe67e22, 0x9b59b6, 0x1abc9c, 0xff6b6b];
+
+    for (let i = 0; i < 40; i++) {
+      const isStar = Math.random() > 0.6;
       const p = new PIXI.Graphics();
 
       if (isStar) {
-        // 星星
         p.poly([
-          0, -5, 1.5, -1.5, 5, -1.5, 2, 1, 3, 5,
-          0, 3, -3, 5, -2, 1, -5, -1.5, -1.5, -1.5,
+          0, -6, 2, -2, 6, -2, 3, 1, 4, 6,
+          0, 3, -4, 6, -3, 1, -6, -2, -2, -2,
         ]);
-      } else {
+      } else if (Math.random() > 0.5) {
         p.circle(0, 0, 2 + Math.random() * 4);
+      } else {
+        p.rect(-3, -3, 6, 6);
       }
 
-      p.fill({
-        color: colors[Math.floor(Math.random() * colors.length)],
-        alpha: 0.9,
-      });
+      p.fill({ color: colors[Math.floor(Math.random() * colors.length)], alpha: 0.9 });
       p.x = x;
       p.y = y;
       p.scale.set(0);
       container.addChild(p);
 
       const angle = Math.random() * Math.PI * 2;
-      const speed = 80 + Math.random() * 200;
-      const duration = 600 + Math.random() * 800;
-      const rotSpeed = (Math.random() - 0.5) * 0.3;
+      const speed = 60 + Math.random() * 250;
+      const duration = 500 + Math.random() * 1000;
       const startTime = performance.now();
 
       const tick = () => {
         const t = Math.min((performance.now() - startTime) / duration, 1);
-        const ease = Anim.ease.outCubic(t);
+        const e = Anim.ease.outCubic(t);
 
-        p.x = x + Math.cos(angle) * speed * ease;
-        p.y = y + Math.sin(angle) * speed * ease - 120 * t * (1 - t) * 2;
-        p.alpha = 1 - ease * 0.7;
-        p.scale.set(Math.min(1.5, ease * 3) * (1 - ease * 0.4));
-        p.rotation += rotSpeed;
+        p.x = x + Math.cos(angle) * speed * e;
+        p.y = y + Math.sin(angle) * speed * e - 100 * t * (1 - t) * 3;
+        p.alpha = 1 - e * 0.6;
+        p.scale.set(Math.min(1.5, e * 3) * (1 - e * 0.4));
+        p.rotation += (Math.random() - 0.5) * 0.2;
 
         if (t < 1) requestAnimationFrame(tick);
         else {
@@ -157,97 +163,101 @@ class Anim {
     }
   }
 
-  // ===== ✨ 选牌发光 =====
-  static selectGlow(tile) {
+  /** 💡 选中脉冲发光（Pomax box-shadow风格） */
+  static glowPulse(tile) {
+    const w = TILE.BIG_W;
+    const h = TILE.BIG_H;
+
     const glow = new PIXI.Graphics();
-    const w = TILE_STYLE.W * (tile.baseScale || 1);
-    const h = TILE_STYLE.H * (tile.baseScale || 1);
-    glow.roundRect(-3, -3, w + 6, h + 6, TILE_STYLE.R + 2);
+    glow.roundRect(-4, -4, w + 8, h + 8, TILE_STYLE.R + 3);
     glow.fill({ color: 0xf1c40f, alpha: 0 });
+    glow.name = 'glow';
 
     tile.addChildAt(glow, 0);
 
-    // 脉冲动画
     const startTime = performance.now();
     const tick = () => {
-      if (!glow.parent) return; // 已被移除
-      const t = (Math.sin(performance.now() / 200) + 1) / 2;
-      glow.alpha = 0.15 + t * 0.25;
+      if (!glow.parent) return;
+      const t = (Math.sin(performance.now() / 250) + 1) / 2;
+      glow.alpha = 0.1 + t * 0.3;
+      requestAnimationFrame(tick);
+    };
+    tick();
+    return glow;
+  }
+
+  /** ✨ 建议高亮（AI建议的牌） */
+  static suggestHighlight(tile) {
+    const mark = new PIXI.Graphics();
+    const w = TILE.BIG_W, h = TILE.BIG_H;
+    mark.roundRect(-2, -2, w + 4, h + 4, TILE_STYLE.R + 2);
+    mark.stroke({ width: 2, color: 0x9b59b6 });
+    mark.fill({ color: 0x9b59b6, alpha: 0.08 });
+    mark.name = 'suggestion';
+
+    tile.addChildAt(mark, 1);
+
+    const startTime = performance.now();
+    const tick = () => {
+      if (!mark.parent) return;
+      const t = (Math.sin(performance.now() / 400) + 1) / 2;
+      mark.alpha = 0.3 + t * 0.7;
       requestAnimationFrame(tick);
     };
     tick();
 
-    return glow;
+    return mark;
   }
 
-  // ===== 💫 缓动上移（分数变化等） =====
-  static async floatUp(text, startY, distance = -40) {
-    const startTime = performance.now();
-    const duration = 600;
-
-    return new Promise(resolve => {
-      const tick = () => {
-        const t = Math.min((performance.now() - startTime) / duration, 1);
-        const e = Anim.ease.outCubic(t);
-        text.y = startY + distance * e;
-        text.alpha = 1 - e;
-
-        if (t < 1) requestAnimationFrame(tick);
-        else {
-          if (text.parent) {
-            text.parent.removeChild(text);
-            text.destroy();
-          }
-          resolve();
-        }
-      };
-      tick();
+  /** 💫 分数飘字 */
+  static scorePopup(container, x, y, text, color = 0xf1c40f) {
+    const t = new PIXI.Text({
+      text,
+      style: { fontFamily: 'PingFang SC, sans-serif', fontSize: 24, fontWeight: 'bold', fill: color }
     });
+    t.anchor.set(0.5);
+    t.x = x;
+    t.y = y;
+    container.addChild(t);
+
+    const startTime = performance.now();
+    const duration = 800;
+
+    const tick = () => {
+      const elapsed = performance.now() - startTime;
+      const p = Math.min(elapsed / duration, 1);
+      const e = Anim.ease.outCubic(p);
+      t.y = y - 50 * e;
+      t.alpha = 1 - e;
+      t.scale.set(1 + e * 0.3);
+
+      if (p < 1) requestAnimationFrame(tick);
+      else {
+        container.removeChild(t);
+        t.destroy();
+      }
+    };
+    tick();
   }
 
-  // ===== ⏱️ 倒计时条动画 =====
-  static timerBar(graphics, maxWidth, duration = 8000) {
+  /** ⏱ 倒计时条 */
+  static timerBar(g, maxWidth, duration = 8000) {
     const startTime = performance.now();
     const tick = () => {
-      if (!graphics.parent) return;
+      if (!g.parent) return;
       const elapsed = performance.now() - startTime;
       const ratio = Math.max(0, 1 - elapsed / duration);
 
-      graphics.clear();
-      graphics.roundRect(0, 0, maxWidth * ratio, 6, 3);
-      if (ratio > 0.3) {
-        graphics.fill({ color: 0xf1c40f });
-      } else if (ratio > 0.1) {
-        graphics.fill({ color: 0xe67e22 });
-      } else {
-        graphics.fill({ color: 0xe74c3c });
-      }
+      g.clear();
+      g.roundRect(0, 0, maxWidth * ratio, 5, 2.5);
+      if (ratio > 0.4) g.fill({ color: 0xf1c40f });
+      else if (ratio > 0.15) g.fill({ color: 0xe67e22 });
+      else g.fill({ color: 0xe74c3c });
 
       if (ratio > 0) requestAnimationFrame(tick);
     };
     tick();
   }
 
-  // ===== 🔥 牌面辉光效果 =====
-  static glowEffect(tile, color = 0xf1c40f) {
-    const w = TILE_STYLE.W * (tile.baseScale || 1);
-    const h = TILE_STYLE.H * (tile.baseScale || 1);
-
-    const filter = new PIXI.BlurFilter();
-    filter.blur = 4;
-
-    const glow = new PIXI.Graphics();
-    glow.roundRect(-2, -2, w + 4, h + 4, TILE_STYLE.R + 2);
-    glow.fill({ color, alpha: 0.5 });
-    glow.filters = [filter];
-    glow.alpha = 0;
-
-    tile.addChildAt(glow, 0);
-
-    Anim.tween(glow, { alpha: 1 }, 200).then(() => {
-      Anim.tween(glow, { alpha: 0.4 }, 500);
-    });
-
-    return glow;
-  }
+  static sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 }

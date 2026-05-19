@@ -20,10 +20,9 @@ class GameEngine {
   }
 }
 
-// ===== 全局引用 =====
 window._engine = null;
 
-// ===== 渲染更新 =====
+// ===== 渲染 =====
 function updateUI() {
   const scene = window._engine?.scene;
   if (!scene) return;
@@ -33,7 +32,7 @@ function updateUI() {
     scene.renderHand(i, gameState.players[i].hand, i === 0, i === 0 ? gameState.selectedTile : -1);
     scene.renderMelons(i, gameState.players[i].melons);
   }
-  scene.renderCenterDiscard(gameState.lastDiscard);
+  scene.renderCenterDiscard(gameState.lastDiscard, gameState.lastDiscardPlayer);
 }
 
 function selectTile(playerIdx) {
@@ -56,14 +55,15 @@ function disableAllActions() {
 function showPlayerActions(actions, tile) {
   const scene = window._engine?.scene;
   if (!scene) return;
-
   const allActions = [];
   for (const [, acts] of Object.entries(actions)) allActions.push(...acts);
   const unique = [...new Set(allActions)];
 
+  sound.click();
   scene.showActions(unique, (action) => {
     gameState.turnPhase = 'idle';
     const targetIdx = parseInt(Object.keys(actions)[0]);
+    sound.click();
     switch (action) {
       case 'hu':   handleHu(targetIdx, tile); break;
       case 'peng': handlePeng(targetIdx, tile); break;
@@ -86,12 +86,16 @@ function showHuModal(playerIdx, type) {
 
   player.score += multiplier;
 
-  // 🎆 粒子庆祝
+  // 🎆 三波粒子庆祝 + 音效
   const scene = window._engine?.scene;
   if (scene) {
     Anim.celebrate(scene.layers.particles, scene.W / 2, scene.H / 2);
-    setTimeout(() => Anim.celebrate(scene.layers.particles, scene.W * 0.3, scene.H * 0.3), 300);
-    setTimeout(() => Anim.celebrate(scene.layers.particles, scene.W * 0.7, scene.H * 0.7), 600);
+    setTimeout(() => Anim.celebrate(scene.layers.particles, scene.W * 0.3, scene.H * 0.3), 400);
+    setTimeout(() => Anim.celebrate(scene.layers.particles, scene.W * 0.7, scene.H * 0.7), 800);
+
+    // 分数弹出
+    Anim.scorePopup(scene.layers.particles, scene.W / 2, scene.H / 2 - 140,
+      `+${multiplier}`, 0xf1c40f);
 
     scene.showModal(
       `🎉 ${type}！`,
@@ -122,14 +126,12 @@ function endGame() {
 
   const scene = window._engine?.scene;
   if (scene) {
-    // 最终庆祝
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 3; i++)
       setTimeout(() => Anim.celebrate(
         scene.layers.particles,
         scene.W * (0.2 + 0.6 * Math.random()),
         scene.H * (0.2 + 0.6 * Math.random())
       ), i * 400);
-    }
 
     setTimeout(() => {
       const scores = gameState.players.map(
@@ -143,7 +145,7 @@ function endGame() {
   }
 }
 
-// ===== 启动（覆写） =====
+// ===== 启动 =====
 const __startGame = startGame;
 startGame = function() {
   for (const p of gameState.players) {
@@ -166,15 +168,15 @@ startGame = function() {
   gameState.players[0].hand.sort((a, b) => a - b);
 
   updateUI();
-  setStatus('🎯 游戏开始！点击选牌，再点击打出');
+  setStatus('🎯 长沙红中麻将 · 点击选牌打出');
   checkTianHu(0);
   gameState.currentPlayer = 0;
 
-  // 绑定牌点击
   bindTileClicks();
+  bindKeyboard();
 };
 
-// ===== 牌点击处理 =====
+// ===== 键鼠绑定 =====
 function bindTileClicks() {
   const scene = window._engine?.scene;
   if (!scene) return;
@@ -185,22 +187,54 @@ function bindTileClicks() {
     if (gameState.currentPlayer !== 0 || gameState.isProcessing) return;
 
     let target = e.target;
-    while (target && (target.tileIndex === undefined || !target.draggable)) {
+    while (target && (target.tileIndex === undefined || !target.draggable))
       target = target.parent;
-    }
     if (!target || target.tileIndex === undefined) return;
 
     if (gameState.selectedTile === target.tileIndex) {
-      // 二次点击 = 出牌
-      playTile(0, target.tileIndex);
+      playTile(0, target.tileIndex);  // 二次点击出牌
     } else {
       gameState.selectedTile = target.tileIndex;
+      sound.click();
       updateUI();
     }
   });
 }
 
-// ===== 重写出牌（带动画） =====
+function bindKeyboard() {
+  document.removeEventListener('keydown', handleKeyDown);
+  document.addEventListener('keydown', handleKeyDown);
+}
+
+function handleKeyDown(e) {
+  if (gameState.currentPlayer !== 0 || gameState.isProcessing) return;
+
+  const hand = gameState.players[0].hand;
+
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    if (gameState.selectedTile !== null) {
+      playTile(0, gameState.selectedTile);
+    }
+    return;
+  }
+
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    gameState.selectedTile = Math.max(0, (gameState.selectedTile || 0) - 1);
+    updateUI();
+    return;
+  }
+
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+    e.preventDefault();
+    gameState.selectedTile = Math.min(hand.length - 1, (gameState.selectedTile || 0) + 1);
+    updateUI();
+    return;
+  }
+}
+
+// ===== 重写出牌（API 可覆盖） =====
 const __playTile = playTile;
 playTile = function(playerIdx, handIdx) {
   gameState.isProcessing = true;
@@ -215,7 +249,6 @@ playTile = function(playerIdx, handIdx) {
   setStatus(`玩家${playerIdx + 1} 打出 ${decodeTile(tile).name}`);
   updateUI();
 
-  // 检测操作
   const actions = detectActions(playerIdx, tile);
 
   if (Object.keys(actions).length > 0) {
@@ -223,7 +256,8 @@ playTile = function(playerIdx, handIdx) {
       setTimeout(() => {
         for (const pIdx of Object.keys(actions)) {
           if (aiDecideAction(parseInt(pIdx), tile, actions[pIdx]) === 'hu') {
-            handleHu(parseInt(pIdx), tile); return;
+            handleHu(parseInt(pIdx), tile);
+            return;
           }
         }
         nextTurn((playerIdx + 1) % 4);
