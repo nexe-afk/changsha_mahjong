@@ -3,69 +3,77 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>长沙红中麻将</title>
-  <link rel="stylesheet" href="css/style.css">
+  <title>长沙红中麻将 🀄</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0d1f0d;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    }
+    #game-canvas {
+      display: block;
+    }
+    #loading {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #f1c40f;
+      font-size: 24px;
+      background: #0d1f0d;
+      z-index: 100;
+    }
+  </style>
 </head>
 <body>
-  <div id="app">
-    <!-- 顶部：玩家3 & 玩家4 -->
-    <div id="top-bar">
-      <div class="player-info" id="player3-info">
-        <span class="player-name">🤖 上家</span>
-        <span class="player-score">0</span>
-        <div class="hand-back" id="player3-hand"></div>
-        <div class="melon-area" id="player3-melons"></div>
-        <div class="discard-area" id="player3-discards"></div>
-      </div>
-      <div class="player-info" id="player4-info">
-        <span class="player-name">🤖 对家</span>
-        <span class="player-score">0</span>
-        <div class="hand-back" id="player4-hand"></div>
-        <div class="melon-area" id="player4-melons"></div>
-        <div class="discard-area" id="player4-discards"></div>
-      </div>
-    </div>
+  <div id="loading">🀄 加载中...</div>
+  <script src="https://cdn.jsdelivr.net/npm/pixi.js@8.1.0/dist/pixi.min.js"></script>
 
-    <!-- 中间区域 -->
-    <div id="center-area">
-      <div id="game-status">长沙红中麻将 🀄</div>
-      <div id="timer-bar">
-        <div id="timer-fill"></div>
-      </div>
-      <div id="action-panel">
-        <button class="action-btn" id="btn-hu" disabled>胡</button>
-        <button class="action-btn" id="btn-peng" disabled>碰</button>
-        <button class="action-btn" id="btn-gang" disabled>杠</button>
-        <button class="action-btn" id="btn-pass" disabled>过</button>
-      </div>
-      <div id="last-discard-area"></div>
-    </div>
-
-    <!-- 左侧：玩家2 -->
-    <div id="left-bar">
-      <div class="player-info" id="player2-info">
-        <span class="player-name">🤖 下家</span>
-        <span class="player-score">0</span>
-        <div class="hand-back" id="player2-hand"></div>
-        <div class="melon-area" id="player2-melons"></div>
-      </div>
-    </div>
-
-    <!-- 底部：玩家1（你） -->
-    <div id="bottom-bar">
-      <div class="player-info" id="player1-info">
-        <span class="player-name">🧑 你</span>
-        <span class="player-score">0</span>
-      </div>
-      <div class="melon-area" id="player1-melons"></div>
-      <div id="hand-area" id="player1-hand"></div>
-    </div>
-  </div>
-
+  <!-- 核心逻辑（纯算法，不变） -->
   <script src="js/core.js"></script>
   <script src="js/hu.js"></script>
   <script src="js/ai.js"></script>
   <script src="js/rule.js"></script>
-  <script src="js/game.js"></script>
+
+  <!-- 引擎层 -->
+  <script src="engine/tile.js"></script>
+  <script src="engine/renderer.js"></script>
+  <script src="engine/scenes.js"></script>
+  <script src="engine/animation.js"></script>
+  <script src="engine/flow.js"></script>
+
+  <!-- 游戏流程引擎 -->
+  <script src="engine/game_engine.js"></script>
+
+  <script>
+    document.getElementById('loading').textContent = '🎮 启动中...';
+    window.addEventListener('load', async () => {
+      const app = new PIXI.Application();
+      await app.init({
+        width: 1200,
+        height: 800,
+        backgroundColor: 0x0d1f0d,
+        antialias: true,
+        resolution: window.devicePixelRatio || 1,
+        autoDensity: true,
+      });
+      document.getElementById('game-canvas')?.remove();
+      document.getElementById('loading')?.remove();
+      const canvas = app.canvas;
+      canvas.id = 'game-canvas';
+      document.body.appendChild(canvas);
+
+      // 初始化引擎
+      const engine = new GameEngine(app);
+      engine.init();
+      engine.start();
+    });
+  </script>
 </body>
 </html>

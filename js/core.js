@@ -156,3 +156,25 @@ function findPairs(hand) {
   }
   return pairs;
 }
+
+// ===== 游戏全局状态 =====
+
+const gameState = {
+  wall: [],
+  players: [
+    { hand: [], melons: [], discards: [], score: 0, isHuman: true },
+    { hand: [], melons: [], discards: [], score: 0, isHuman: false },
+    { hand: [], melons: [], discards: [], score: 0, isHuman: false },
+    { hand: [], melons: [], discards: [], score: 0, isHuman: false },
+  ],
+  currentPlayer: 0,
+  lastDiscard: null,
+  lastDiscardPlayer: -1,
+  isProcessing: false,
+  turnPhase: 'idle',
+  selectedTile: null,
+  gameOver: false,
+  huCount: 0,
+  huPlayers: [],
+  zhongCount: 4,
+};
