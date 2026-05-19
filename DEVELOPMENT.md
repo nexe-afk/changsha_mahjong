@@ -573,7 +573,7 @@ assert(canWin(test5, 0) === true);
 
 ### AI 提示词库
 
-以下是给每个 AI 成员的系统提示词，调用时直接使用。
+以下是给每个 AI 成员的系统提示词和任务提示词，调用时直接使用。
 
 ---
 
@@ -856,48 +856,329 @@ Day 3        ░░░░░░░░░░░░░░░░░░░░░░�
 2. **Codex**：代码完成行数、测试通过率
 3. **GPTImage2**：UI 设计交付
 
-## 十六、引擎架构
+---
 
-### PixiJS 引擎层
+## 十六、任务提示词库（按模块分类）
+
+### 🎨 界面模块 — GPTImage2 任务提示词
+
+```markdown
+### 任务：完成 PixiJS 游戏界面渲染
+
+#### 现有代码说明
+- 引擎基于 PixiJS 8（WebGL 2D）
+- 牌面使用 PIXI.Graphics 纯代码绘制（零图片）
+- 场景分层：bg → tiles → ui → modal → particles
+- 牌尺寸常量见 `engine/tile.js` 中的 `TILE_STYLE` / `TILE`
+
+#### 当前状态
+- index.html 已加载 PixiJS CDN
+- scenes.js 已有基础布局（牌桌、手牌、碰杠区、按钮、弹窗）
+- animation.js 有完整动画系统
+- tile.js 有 3D 浮雕牌面渲染
+
+#### 需要完成
+
+**1. 界面布局修复**
+- 场景居中 + 自适应窗口大小
+- 四家手牌位置准确（底部你、右侧下家、顶部对家、左侧上家）
+- 中心出牌区位置：屏幕正中心
+- 按钮栏：屏幕下方手牌上方
+- 弹窗：居中弹出
+
+**2. 牌面渲染优化**
+- 普通牌：象牙白 #faf6ee + 金色边框 #c4a86a
+- 红中牌：红色 #e74c3c + 金色「中」字
+- 背面牌：深绿 #1a4a2a + 菱形花纹
+- 碰/杠区：用缩小版牌面（scale=0.55）
+- 弃牌：最右边显示少量
+
+**3. 动画效果**
+- 出牌：从各玩家方向抛物线飞向中心（用 Anim.discardTile）
+- 选牌：黄色呼吸脉冲 + 上移（用 Anim.glowPulse）
+- 胡牌：40粒子庆祝（用 Anim.celebrate）
+- 分数变化：数字上浮淡出（用 Anim.scorePopup）
+
+**4. 状态显示**
+- 顶部状态栏：当前回合信息
+- 每位玩家名称 + 分数
+- 牌墙剩余张数
+- 当前玩家高亮
+
+**5. 输出格式**
+- 输出完整的 scenes.js 文件（替换现有）
+- 不要修改 core.js / hu.js / ai.js / rule.js
+- 确保所有函数有中文注释
+```
+
+---
+
+### 🛠️ 后台模块 — Codex 任务提示词
+
+```markdown
+### 任务：完善游戏逻辑与AI
+
+#### 项目概述
+长沙红中麻将，纯前端 JS，PixiJS 8 引擎
+- 112张牌：条筒万各36张 + 4张红中
+- 红中万能牌、血战到底、扎鸟、缺一色
+- 4人游戏，1人类 + 3AI
+
+#### 现有代码
+- js/core.js — 牌定义、牌墙、工具函数、gameState
+- js/hu.js — canWin(hand,zhong) 胡牌判定
+- js/ai.js — aiDecideDiscard(hand,melons) 出牌决策
+- js/rule.js — 胡牌类型检测、扎鸟、倍数计算
+- engine/flow.js — 游戏流程（回合、碰杠胡处理）
+
+#### 需要完成
+
+**1. 胡牌算法修复**
+- [ ] 标准胡回溯法：N面子 + 1将眼
+- [ ] 七小对：7对子（红中可替代）
+- [ ] 红中万能：在回溯中尝试替代任何牌
+- [ ] 缺一色：胡牌时不能三门全有
+- [ ] 听牌检测：getTingCards(hand) 返回可胡牌列表
+- [ ] 避免无限递归，限制回溯深度
+
+**2. AI 策略优化**
+- [ ] 出牌评分：成对+20、成顺+10、边张-5、听牌+30
+- [ ] 碰决策：碰后听牌才碰
+- [ ] 杠决策：杠后补牌
+- [ ] 胡决策：能胡必胡
+- [ ] 红中策略：永不弃红中
+
+**3. 游戏流程**
+- [ ] 发牌：每人13张，庄家14张
+- [ ] 回合：摸牌→出牌→检测胡碰杠→切换
+- [ ] 操作优先级：胡 > 杠 > 碰 > 过
+- [ ] 血战到底：3人胡牌才结束
+- [ ] 流局：牌墙空无人胡
+- [ ] 天胡/地胡检测
+
+**4. 输出格式**
+- 输出完整的 core.js / hu.js / ai.js / rule.js / engine/flow.js
+- 用 // ==== 区域分隔 ==== 组织代码
+- 中文注释，每个函数说明用途
+- 避免全局变量污染（gameState 已定义）
+```
+
+---
+
+### 🕹️ 游戏模块 — Codex + GPT 任务提示词
+
+```markdown
+### 任务：完成游戏引擎集成
+
+#### 代码接口约定
+
+引擎层（engine/）调用算法层（js/）的函数：
+- canWin(hand, zhong) → bool
+- countZhong(hand) → number
+- detectActions(discardPlayer, tile) → { playerIdx: [actions] }
+- aiDecideDiscard(hand, melons) → tileCode
+- aiDecideAction(playerIdx, tile, actions) → 'hu'|'peng'|'gang'|'pass'
+- drawBirds(wall, count) → { birds, multiplier }
+- createWall() → []
+- shuffle(arr) → []
+- deal(wall) → [hand0, hand1, hand2, hand3]
+
+游戏流程层（engine/flow.js / engine/game_engine.js）提供：
+- startGame() — 重置 + 发牌 + 启动
+- playTile(playerIdx, handIdx) — 出牌
+- nextTurn(playerIdx) — 切换回合
+- handleHu/Peng/Gang — 操作处理
+- updateUI() — 刷新画面
+- setStatus(msg) — 状态文字
+
+#### 需要检查
+- [ ] 所有函数调用链完整无缺
+- [ ] gameState 变量路径正确
+- [ ] 事件绑定（点击、键盘）可用
+- [ ] AI 自动回合无阻塞
+- [ ] HTML 加载顺序正确
+- [ ] PixiJS CDN 可用
+- [ ] 无 JS 控制台报错
+- [ ] 游戏可完整玩一局
+
+#### 输出
+- 列出所有缺失函数和修复方案
+- 不要重写整个文件，只输出需要改的部分
+```
+
+---
+
+### 👤 注册模块 — GPT 任务提示词
+
+```markdown
+### 任务：添加用户注册/登录系统
+
+#### 背景
+目前的游戏是纯单机版，需要增加用户系统支持：
+- 战绩保存（localStorage）
+- 用户昵称
+- 对局历史
+
+#### 需要创建的文件
+
+**js/account.js** — 用户账户管理
+```javascript
+// ===== 用户系统（localStorage 持久化） =====
+
+function initAccount() {
+  // 检查 localStorage 是否有用户数据
+  // 如果没有，引导用户输入昵称
+  // 返回当前用户对象
+}
+
+function getCurrentUser() {
+  // 返回 { nickname, totalGames, wins, bestScore, history[] }
+}
+
+function saveGameRecord(score, huType, isWin) {
+  // 保存一局记录到 localStorage
+}
+
+function getHistory(limit = 10) {
+  // 返回最近 N 局记录
+}
+
+function setNickname(name) {
+  // 设置/修改昵称
+}
+```
+
+#### UI 需求
+- 新用户弹窗：首次打开提示输入昵称
+- 顶部显示用户昵称 + 胜率
+- 游戏结束后显示战绩面板
+
+#### 数据库
+- 使用浏览器 localStorage
+- 数据格式：
+```json
+{
+  "nickname": "玩家",
+  "totalGames": 0,
+  "wins": 0,
+  "bestScore": 0,
+  "history": [
+    { "date": "2026-05-19", "score": 16, "huType": "qixiaodui", "isWin": true }
+  ]
+}
+```
+
+#### 输出
+- 输出完整的 js/account.js
+- 给出 index.html 需要插入的代码
+- 给出 game_engine.js 需要修改的部分
 
 ```
-majiang/
-├── js/                    ← 算法层（纯逻辑，不依赖引擎）
-│   ├── core.js           牌定义、牌墙、洗牌、游戏状态
-│   ├── hu.js             胡牌判定算法（回溯法）
-│   ├── ai.js             AI 出牌策略
-│   └── rule.js           长沙红中规则
-│
-├── engine/                ← 渲染层（PixiJS WebGL）
-│   ├── tile.js           麻将牌绘制（Graphics + Text）
-│   ├── scenes.js         场景布局（四家位置、按钮、弹窗）
-│   ├── animation.js      动画系统（缓动、抛物线、粒子）
-│   ├── renderer.js       渲染桥接（连接游戏逻辑和场景）
-│   ├── flow.js           游戏流程（回合控制、胡碰杠）
-│   └── game_engine.js    引擎主控（PixiJS Application）
-│
-└── index.html            入口（加载 PixiJS CDN + 全部脚本）
+
+---
+
+### 🧪 测试模块 — GPT 任务提示词
+
+```markdown
+### 任务：编写完整测试用例
+
+#### 测试目标
+验证长沙红中麻将胡牌算法的正确性。
+
+#### 测试环境
+纯 Node.js 环境，使用 console.assert()，无需框架。
+运行方式：
+```bash
+node test_hu.js
 ```
 
-### 引擎特点
+#### 测试用例覆盖
 
-| 特性 | 实现方式 |
-|------|----------|
-| 渲染 | PixiJS 8 WebGL 硬件加速 |
-| 牌面 | PIXI.Graphics 纯代码绘制，无图片资源 |
-| 动画 | requestAnimationFrame + 自定义缓动 |
-| 胡牌庆祝 | 粒子系统（20个彩色粒子飞散） |
-| 出牌动画 | 抛物线轨迹 + 缩放 |
-| 碰/杠 | 收集动画（多牌飞向目标位置） |
+**1. 标准胡（没有红中）**
+- [ ] 3个顺子 + 1个对子 → true
+- [ ] 3个刻子 + 1个对子 → true
+- [ ] 2个顺子 + 1个刻子 + 1个对子 → true
+- [ ] 混搭顺子和刻子 → true
+- [ ] 不能胡的牌型 → false
+- [ ] 缺少将眼 → false
+- [ ] 多一张牌 → false
 
-### 分离架构的好处
+**2. 七小对**
+- [ ] 7个对子 → true
+- [ ] 6个对子 + 2个单张 → false
+- [ ] 5个对子 + 4张 = 不能胡 → false
+
+**3. 红中万能**
+- [ ] 1个红中 + 缺1张 = 补位成胡 → true
+- [ ] 2个红中 + 缺2张 = 补位成胡 → true
+- [ ] 4个红中 + 其他 = 万能牌型 → true
+- [ ] 1个红中但缺太多 → false
+
+**4. 碰碰胡**
+- [ ] 4个刻子 + 对子 → true
+- [ ] 有顺子的 → 不算碰碰胡
+
+**5. 清一色**
+- [ ] 全部条 + 红中 → true
+- [ ] 条和筒混合 → false
+
+**6. 缺一色**
+- [ ] 只有条和筒 → true
+- [ ] 条筒万都有 → false
+
+**7. 听牌**
+- [ ] 标准听牌 → 返回可胡牌列表
+- [ ] 已胡牌不能听 → 空列表
+- [ ] 红中万能听牌 → 包含红中
+
+**8. 边界情况**
+- [ ] 空手牌 → false
+- [ ] 全部红中 → 可胡
+- [ ] 14张牌直接胡（天胡） → true
+- [ ] 只有一门花色 → 缺一色 + 清一色
+
+#### 测试代码结构
+```javascript
+// 按模块分组
+// 每个测试用例有实际牌型数组和预期结果
+// 输出格式：✓ 测试名 ✅ 或 ✗ 测试名 ❌
+
+function test(name, fn) {
+  try {
+    console.assert(fn(), name);
+    console.log('✓', name);
+  } catch(e) {
+    console.log('✗', name, '-', e.message);
+  }
+}
+
+// 1. 标准胡测试
+const hand1 = [1,1, 2,2,2, 3,3,3, 4,4,4, 5,5];
+test('标准胡-刻刻刻顺+将对', () => canWin(hand1, 0) === true);
+
+// ...更多用例
+```
+
+#### 输出
+- 输出完整的 test_hu.js 文件（>50个测试用例）
+- 可直接在 Node.js 中运行
+- 每个测试独立，不互相依赖
+```
+
+---
+
+### 📦 一键调用（项目管理用）
+
+当需要分配完整任务链时，使用以下调用顺序：
 
 ```
-算法层 (js/)    ← 可移植到任何平台
-   ↑ 通过 gameState 通信 ↓
-渲染层 (engine/) ← 可替换为其他引擎
+Step 1 → Codex: 修复胡牌算法
+Step 2 → Codex: 完善游戏流程
+Step 3 → GPTImage2: 渲染游戏界面
+Step 4 → GPT: 编写测试用例
+Step 5 → Codex: 修复测试发现的bug
+Step 6 → GPT: 添加用户注册 + 部署
 ```
 
-- 换 Cocos Creator：保留 `js/`，重写 `engine/`
-- 换 Phaser：保留 `js/`，重写 `engine/`
-- 加联机版：保留所有代码，加 WebSocket 同步 `gameState`
+每个步骤之间的输入是上一个步骤的输出文件，
+参考 `engine/` 和 `js/` 目录的代码调用约定。
