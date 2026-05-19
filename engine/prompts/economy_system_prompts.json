@@ -1,0 +1,42 @@
+[
+  {
+    "id": "in_game_currency_design",
+    "title": "设计游戏内虚拟货币体系提示词",
+    "description": "生成用于 GPT/Codex 的提示词，用于设计游戏内多层货币（软/硬通货）系统逻辑与数据模型。",
+    "prompt": "作为游戏经济设计专家，请生成一个提示词，用于 AI 输出麻将平台内分层虚拟货币系统的逻辑设计、数据库 schema 和兑换规则。包含：\n- 软通货（Soft Currency）：通过日常对局/任务获得，用于购买基础道具、房卡、普通服务\n- 硬通货（Premium Currency）：通过充值/成就奖励/特殊活动获得，用于购买高级道具、皮肤、VIP 权益\n- 兑换规则与汇率设计\n- 数据库 schema（玩家钱包、交易记录、兑换日志）\n- 防刷与总量控制机制",
+    "expected_model": "gpt-4.1",
+    "output_format": "JSON"
+  },
+  {
+    "id": "faucets_and_sinks_model",
+    "title": "来源与消耗机制提示词",
+    "description": "生成用于 GPT/Codex 的提示词，用于实现货币来源与消耗系统代码。",
+    "prompt": "请生成提示词指导 AI 编写麻将平台的虚拟货币来源与消耗机制，包括：\n- 对局奖励（胡牌/中鸟等）\n- 每日任务奖励\n- 内购充值兑换\n- 物品消耗逻辑（购买皮肤、道具、房卡）\n- 价格模型与 sinks 设计\n- 防通胀控制：确保 source < sink 总量",
+    "expected_model": "gpt-4.1",
+    "output_format": "JSON"
+  },
+  {
+    "id": "virtual_market_system",
+    "title": "虚拟市场与资产价值提示词",
+    "description": "生成用于 GPT/Codex 的提示词指导构建游戏内市场/拍卖/资产体系",
+    "prompt": "作为虚拟经济系统专家，请生成一条提示词让 AI 设计并生成游戏内虚拟市场系统的代码，包括：\n- 道具上架与下架\n- 拍卖/竞价机制\n- 交易手续费（平台抽成）\n- 交易记录与历史价格曲线\n- 限量/稀有道具市场价值设计",
+    "expected_model": "gpt-4.1/codex",
+    "output_format": "JSON"
+  },
+  {
+    "id": "reward_curve_analysis",
+    "title": "奖励曲线与平衡分析提示词",
+    "description": "生成提示词用于 AI 生成虚拟货币奖励曲线和经济平衡分析工具",
+    "prompt": "请生成提示词，让 AI 输出一个奖励曲线设计和经济平衡分析的代码和文档，包含：\n- 模拟器示例（蒙特卡洛模拟货币流通）\n- 平衡调整策略\n- 通货膨胀控制模型\n- 奖励曲线应当随玩家成长递增但不过度泛滥",
+    "expected_model": "gpt-4.1",
+    "output_format": "JSON"
+  },
+  {
+    "id": "economic_dashboard",
+    "title": "经济系统监控与分析仪表板提示词",
+    "description": "生成用于 GPT/Codex 的提示词，用于创建经济系统实时监控/分析仪表板",
+    "prompt": "You are a data analytics and game economy expert. Generate a prompt for AI to build a dashboard to monitor in-game economy metrics (currency supply, sinks/faucets flow, inflation rates, player spending), with sample code and integration.",
+    "expected_model": "gpt-4.1",
+    "output_format": "JSON"
+  }
+]
