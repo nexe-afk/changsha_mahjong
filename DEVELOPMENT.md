@@ -855,3 +855,49 @@ Day 3        ░░░░░░░░░░░░░░░░░░░░░░�
 1. **GPT**：架构/文档进度
 2. **Codex**：代码完成行数、测试通过率
 3. **GPTImage2**：UI 设计交付
+
+## 十六、引擎架构
+
+### PixiJS 引擎层
+
+```
+majiang/
+├── js/                    ← 算法层（纯逻辑，不依赖引擎）
+│   ├── core.js           牌定义、牌墙、洗牌、游戏状态
+│   ├── hu.js             胡牌判定算法（回溯法）
+│   ├── ai.js             AI 出牌策略
+│   └── rule.js           长沙红中规则
+│
+├── engine/                ← 渲染层（PixiJS WebGL）
+│   ├── tile.js           麻将牌绘制（Graphics + Text）
+│   ├── scenes.js         场景布局（四家位置、按钮、弹窗）
+│   ├── animation.js      动画系统（缓动、抛物线、粒子）
+│   ├── renderer.js       渲染桥接（连接游戏逻辑和场景）
+│   ├── flow.js           游戏流程（回合控制、胡碰杠）
+│   └── game_engine.js    引擎主控（PixiJS Application）
+│
+└── index.html            入口（加载 PixiJS CDN + 全部脚本）
+```
+
+### 引擎特点
+
+| 特性 | 实现方式 |
+|------|----------|
+| 渲染 | PixiJS 8 WebGL 硬件加速 |
+| 牌面 | PIXI.Graphics 纯代码绘制，无图片资源 |
+| 动画 | requestAnimationFrame + 自定义缓动 |
+| 胡牌庆祝 | 粒子系统（20个彩色粒子飞散） |
+| 出牌动画 | 抛物线轨迹 + 缩放 |
+| 碰/杠 | 收集动画（多牌飞向目标位置） |
+
+### 分离架构的好处
+
+```
+算法层 (js/)    ← 可移植到任何平台
+   ↑ 通过 gameState 通信 ↓
+渲染层 (engine/) ← 可替换为其他引擎
+```
+
+- 换 Cocos Creator：保留 `js/`，重写 `engine/`
+- 换 Phaser：保留 `js/`，重写 `engine/`
+- 加联机版：保留所有代码，加 WebSocket 同步 `gameState`
