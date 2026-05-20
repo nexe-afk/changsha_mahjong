@@ -1,0 +1,40 @@
+# Claude 4.7 提示词 — 新手引导与交互逻辑
+## 原模块: 01 (prompts_v2)
+## 原目标模型: gpt-4.1/codex → Claude 4.7
+
+---
+
+## 原提示词（Codex 版）关键内容
+
+- TutorialManager: 三层渐进引导
+- FeedbackManager: 操作反馈（点击/出牌/不能操作/AI回合）
+- 触摸优化: 点击面积放大20%、长按500ms显示名称、双击直接打出
+
+输出: tutorial.js
+
+## Claude 4.7 优化版
+
+**Role**: 你是前端游戏交互工程师，精通 PixiJS 8 交互系统和浏览器事件模型，有丰富的棋牌游戏 UX 优化经验。
+
+**Task**: 为长沙红中麻将游戏实现新手引导和 UI/UX 交互逻辑模块。核心是 tutorial.js 文件，包含 TutorialManager（首次引导流程）和 FeedbackManager（实时操作反馈）。引导系统覆盖首次打开玩家，在关键操作节点给出清晰提示。
+
+**Context**:
+- 技术栈: JavaScript ES6+ / PixiJS 8 (WebGL)
+- 引擎层文件: engine/scenes.js, engine/tile.js
+- 现有事件绑定: engine/game_engine.js 的 bindTileClicks()
+- 界面操作模式: 点击选牌→二次点击出牌, 不支持键盘
+
+**Detailed Requirements**:
+
+1. **TutorialManager**: 检查 localStorage 首次标志位；如果是首次进入，显示3层渐进引导（第1层选牌→第2层出牌→第3层碰杠胡按钮），每层有半透明遮罩和箭头指向；完成后设标志位，下次不再显示。
+
+2. **FeedbackManager**: 选牌脉冲发光、出牌动画、不能操作时轻微抖动、AI回合显示「AI思考中…」。
+
+3. **触摸优化**: 触摸设备上点击面积放大20%、长按500ms显示牌名(浮窗)、双击直接打出。
+
+**Constraints**:
+- localStorage 标志位区分首次/非首次
+- 引导不可跳过（用户必须点击「下一步」完成全部3层）
+- 触摸优化不干扰桌面端正常操作
+
+**Output Format**: 单个 tutorial.js 文件，包含 TutorialManager 和 FeedbackManager 两个 class。

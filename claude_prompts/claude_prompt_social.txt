@@ -1,0 +1,72 @@
+# Claude 4.7 提示词 — 社交与排行榜系统
+## 原模块: Module 5 (prompts.json) / 06 (prompts_v2)
+## 原目标模型: gpt-4.1/codex → Claude 4.7
+
+---
+
+## 原提示词（Codex 版）关键内容
+
+- AccountManager: 用户账户、战绩统计、昵称管理
+- Leaderboard: 按得分/胜率/总局数排行
+- localStorage 数据格式: mj_account, mj_history, mj_leaderboard
+- UI: 排行榜弹窗、战绩面板、昵称设置
+
+输出: account.js + leaderboard.js (~200行)
+
+## Claude 4.7 优化版
+
+**Role**: 你是前端全栈开发者，精通浏览器端 localStorage 数据建模和社交排行榜算法，有丰富的游戏社交系统实现经验。
+
+**Task**: 用纯 JavaScript (ES6+) 实现长沙红中麻将的社交与排行模块。全部在浏览器端完成，无后端服务器。核心输出为 account.js（用户账户管理+战绩统计）和 leaderboard.js（排行榜系统）。
+
+**Context**:
+- 语言: JavaScript ES6+
+- 存储: localStorage 同步 API
+- 数据前缀: mj_（避免与其他应用冲突）
+- UI 展示: 通过 PixiJS 弹窗系统（engine/scenes.js 的 showModal 方法）
+
+**Detailed Requirements**:
+
+1. **AccountManager 类**:
+   - init(): 初始化用户，读取 localStorage，不存在则创建默认用户
+   - getProfile(): 获取用户信息
+   - setNickname(name): 设置昵称
+   - recordGame(result): 记录对局结果（分数、胡牌类型、胜否、时长）
+   - getStats(): 返回总局数/胜场/胜率/最高得分/平均分/累计中鸟/连胜/最长连胜
+   - getHistory(page, pageSize): 分页查询对局历史
+
+2. **Leaderboard 类**:
+   - load(): 从 localStorage 加载所有玩家数据
+   - getByScore(limit=10): 按最高得分排序
+   - getByWinRate(limit=10): 按胜率排序（总局数≥5）
+   - getByGames(limit=10): 按总局数排序
+   - getMyRank(): 获取当前玩家在排行榜中的位置
+
+3. **localStorage 数据结构要求**:
+   - mj_account: { nickname, createdAt, settings: { sound, difficulty } }
+   - mj_history: [{ date, score, huType, isWin, birds }]
+   - mj_leaderboard: [{ nickname, score, wins, totalGames }]
+
+**I/O Contract**:
+```
+AccountManager.init() → { nickname, stats }
+AccountManager.getStats() → { totalGames, wins, winRate, bestScore, avgScore, totalBirds, currentStreak, bestStreak }
+Leaderboard.getByScore(limit=10) → [{ rank, nickname, score, wins }]
+Leaderboard.getMyRank() → { scoreRank, winRateRank }
+```
+
+**Constraints**:
+- 所有方法使用 try-catch 包裹 localStorage 操作
+- 排行榜最多保留100条记录
+- 数据 key 均以 mj_ 为前缀
+- 首次 init() 后 localStorage 有默认数据
+
+**Output Format**: 两个文件 account.js + leaderboard.js（总计约200行），所有方法有中文注释。
+
+**Verification Plan**:
+1. 首次调用 init() 后 localStorage 有 mj_account 数据
+2. 记录3局后 stats.totalGames = 3
+3. getByScore 返回的列表按分数降序排列
+4. 设置昵称后 getProfile 返回新昵称
+5. 排行榜最多100条记录
+6. 清除浏览器数据后重新初始化正常

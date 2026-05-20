@@ -1,0 +1,46 @@
+# Claude 4.7 提示词 — AI 决策可解释性日志
+## 原模块: 09 (prompts_v2)
+## 原目标模型: gpt-4.1/codex → Claude 4.7
+
+---
+
+## 原提示词（Codex 版）关键内容
+
+- AILogger: 记录出牌/动作决策日志
+- 自然语言解释: generateDiscardReason / generateActionReason
+- 评分可视化: formatScoreTable 按 console.table 输出
+- DecisionScoreCard: 评分因素结构化记录
+- 全局开关: window.AI_DEBUG = false
+
+输出: ai_logger.js (~180行)
+
+## Claude 4.7 优化版
+
+**Role**: 你是 AI 系统可解释性工程师，专注于让游戏 AI 决策过程透明化。你擅长设计结构化决策日志系统和自然语言解释生成。
+
+**Task**: 为长沙红中麻将的 AI 玩家实现决策可解释性日志系统。当 AI 做出决策时，输出结构化的日志说明「为什么」做这个决定。日志有开发调试模式（console.table）和玩家教育模式（可选 UI 展示）两个输出目标。
+
+**Context**:
+- 语言: JavaScript ES6+
+- 接入: ai.js 中的 aiDecideDiscard 和 aiDecideAction
+- 输出目标1: console.table()（开发调试）
+- 输出目标2: 游戏内 UI 弹窗（玩家教育，可选）
+- 开关: window.AI_DEBUG = true/false
+
+**Detailed Requirements**:
+
+1. **AILogger 类**: 记录出牌决策（含手牌、评分明细、选中牌、原因、出牌后听牌）、动作决策（碰/杠/胡/过）、支持查询最近N条日志、清空。
+
+2. **自然语言解释函数**: generateDiscardReason 输出如「选择打出3筒(评分:5)。原因是:边张价值低，不成对也无搭子。」；generateActionReason 输出如「胡牌:听3张，机会很大!」。
+
+3. **DecisionScoreCard 类**: 结构化评分因素记录，支持 addFactor(name, points, reason)、getBreakdown() 返回评分明细、toString() 格式化输出。
+
+4. **评分可视化表格**: formatScoreTable 生成标记最终选择的排序表格，按 console.table 展示。
+
+**Constraints**:
+- AI_DEBUG=true 时每次出牌输出评分表和选择原因
+- AI_DEBUG=false 时无任何输出
+- 日志不超过最近100条（防内存泄漏）
+- 自然语言输出中文
+
+**Output Format**: 文件 ai_logger.js（约180行），包含 AILogger、DecisionScoreCard 类和解释函数。

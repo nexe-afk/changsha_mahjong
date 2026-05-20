@@ -1,0 +1,82 @@
+# Claude 4.7 提示词 — 动态难度调整 (DDA)
+## 原模块: Module 4 (prompts.json) / 04 (prompts_v2)
+## 原目标模型: gpt-4.1/codex → Claude 4.7
+
+---
+
+## 原提示词（Codex 版）关键内容
+
+- 3级难度: easy / normal / hard
+- 连胜≥3局或平均分>20→升一级，连败≥3局或平均分<5→降一级
+- AI参数微调: discardNoise/pengThreshold/huBlindChance
+- PlayerTracker类持久化到localStorage
+- 通过 window.difficultyParams 传递参数
+
+输出: difficulty.js (~150行)
+
+## Claude 4.7 优化版
+
+**Role**: 你是游戏自适应难度系统专家，精通行之有效的动态难度调整（DDA）算法设计。你对玩家行为分段建模、心流理论在游戏平衡中的应用有丰富实战经验。
+
+**Task**: 用纯 JavaScript (ES6+) 实现长沙红中麻将的动态难度调整系统。系统根据玩家最近5局表现自动升降AI难度级别，使玩家始终处于「心流」状态。注意这是纯前端方案，所有数据通过 localStorage 持久化。
+
+**Context**:
+- 语言: JavaScript ES6+，浏览器环境
+- 数据持久化: localStorage
+- 接口依赖: 调用 ai.js 的 getDifficultyParams(level) 获取AI参数
+- 难度参数通过 window.difficultyParams 全局对象传递给 AI
+- 触发时机: 每局游戏结束后自动调用
+- 非侵入式设计，不修改 ai.js
+
+**Detailed Requirements**:
+
+1. **PlayerTracker 类** — 玩家表现追踪:
+   - recordGame(result): 记录一局结果（分数、是否赢、时长）
+   - getRecentGames(n): 获取最近N局记录
+   - getWinRate(n=5): 最近N局胜率
+   - getAvgScore(n=5): 最近N局平均分
+   - getStreak(): 连胜(+) / 连败(-) 数
+   - reset(): 重置数据
+
+2. **难度调整逻辑**:
+   - 连胜≥3局或平均分>20→升一级
+   - 连败≥3局或平均分<5→降一级
+   - 其他情况保持当前难度
+   - 新玩家从 normal 开始
+
+3. **DDAManager 类**:
+   - init(): 读取 localStorage 中的难度设置
+   - applyParams(): 将当前难度参数写入 window.difficultyParams
+   - onGameEnd(result): 游戏结束后调用，触发调整+应用
+
+**I/O Contract**:
+```
+PlayerTracker(storageKey='mj_player_tracker')
+  recordGame({ score: number, isWin: boolean, duration: number }) → void
+  getWinRate(n=5) → number  // 0.0 ~ 1.0
+  getStreak() → number       // 正=连胜，负=连败
+
+adjustDifficulty(currentLevel: string, tracker: PlayerTracker)
+    → 'easy' | 'normal' | 'hard'
+
+DDAManager.init() → void
+DDAManager.applyParams() → void
+DDAManager.onGameEnd(gameResult) → void
+```
+
+**Constraints**:
+- localStorage key 为 'mj_dda'（存储 { level, history[] }）
+- 所有决策阈值用常量定义在文件顶部
+- 非侵入式设计，不影响 ai.js 决策逻辑
+- 纯函数式调整逻辑，可单测
+
+**Output Format**: 一个完整 JavaScript 文件 difficulty.js（约150行），包含 PlayerTracker 类、adjustDifficulty 函数、DDAManager 类。
+
+**Verification Plan**:
+1. 新玩家从 'normal' 开始
+2. 连胜3局后自动升级到 'hard'
+3. 连败3局后自动降级到 'easy'
+4. 升级后 discardNoise 下降、pengThreshold 下降
+5. localStorage 数据在页面刷新后保持
+6. 重置后回到 'normal'
+7. 附带6个测试场景覆盖升降级条件

@@ -1,0 +1,68 @@
+# Claude 4.7 提示词 — 自动化测试套件
+## 原模块: Module 6 (prompts.json) / 07 (prompts_v2)
+## 原目标模型: gpt-4.1/codex → Claude 4.7
+
+---
+
+## 原提示词（Codex 版）关键内容
+
+- 自定义测试运行器: test/assertEqual/assertTrue/assertFalse
+- 覆盖核心模块: core.js, hu.js, ai.js, rule.js
+- 65+ 测试用例，分5组: 工具函数12个, 胡牌28个, AI策略10个, 规则10个, 边界5个
+- Node.js 可运行，console.assert 实现
+
+输出: test_suite.js (~300行)
+
+## Claude 4.7 优化版
+
+**Role**: 你是资深 QA 工程师和测试架构师，精通棋牌类游戏的边界案例分析和自动化测试设计。你擅长设计覆盖全面、边界清晰的测试用例套件。
+
+**Task**: 用纯 JavaScript 编写长沙红中麻将的完整自动化测试套件。无需浏览器环境，可直接在 Node.js 命令行运行。核心是验证：胡牌判定算法、AI出牌逻辑、计分规则和边界情况。
+
+**Context**:
+- 语言: JavaScript ES6+
+- 运行环境: Node.js（无 DOM 依赖）
+- 测试框架: 自定义轻量框架（使用 console.assert + 自定义 test/assertEqual 工具函数）
+- 被测模块: core.js, hu.js, ai.js, rule.js 的关键函数（函数内联拷贝或 require）
+
+**Detailed Requirements**:
+
+1. **测试框架**（自定义）:
+   ```
+   const tests = { passed: 0, failed: 0 };
+   function test(name, fn) { /* try-catch 包装 */ }
+   function assertEqual(actual, expected, msg) { /* JSON.stringify 比较 */ }
+   function assertTrue/assertFalse(value, msg)
+   ```
+
+2. **测试用例至少65个，分组如下**:
+
+   **A. 核心工具函数（12个）**: 牌编码/解码/洗牌/发牌/计数/排序/找对子
+
+   **B. 胡牌判定（28个）**:
+   - 标准胡10个: 顺子+刻子+将眼组合
+   - 七小对5个: 纯七对、红中补够六对、非七对
+   - 红中万能8个: 红中补刻子、补顺子、补将眼、全红中
+   - 听牌检测5个: 标准听牌、红中万能听牌、已胡牌返回空
+
+   **C. AI策略（10个）**: 不弃红中、必胡、难度差异、评分一致性
+
+   **D. 规则系统（10个）**: 胡牌类型检测、倍数计算、扎鸟判定
+
+   **E. 边界情况（5个）**: 全红中胡牌、13张牌false、全1和9、缺一色通过/不通过
+
+**I/O Contract**: 无输入，直接 `node test_suite.js` 运行。输出通过/失败统计。
+
+**Constraints**:
+- 测试文件独立运行，不产生副作用
+- 测试之间不能互相依赖
+- 全部通过输出「全部 N 测试通过」
+- 有失败则输出具体失败的测试名称和期望值
+
+**Output Format**: 单一文件 test_suite.js（约300行），分5组（用注释 === 分隔），最终输出通过/失败统计。
+
+**Verification Plan**:
+1. 运行 `node test_suite.js` 无报错退出
+2. 输出包含「通过: N | 失败: 0」
+3. 失败时有具体测试名称和期望值
+4. 覆盖全部核心模块的边界情况
