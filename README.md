@@ -1,148 +1,154 @@
-# 长沙红中麻将 🀄
+# 长沙红中麻将
 
-> **零基础 → 完整 PixiJS 游戏项目 + 49 条 AI 提示词全家桶**
->
-> 纯前端 JavaScript，单 HTML 页面，零依赖。
-> 覆盖从游戏开发 → 盈利变现 → 加密支付 → 经济体系 → 全栈管线的完整闭环。
+> 纯前端 JavaScript 实现的长沙红中麻将，单 HTML 文件，无后端依赖。
+> PixiJS 8 渲染 + 完整算法层 + AI 对手 + 动态难度。
 
 [![GitHub](https://img.shields.io/badge/GitHub-changsha_mahjong-181717?logo=github)](https://github.com/nexe-afk/changsha_mahjong)
 ![GitHub last commit](https://img.shields.io/github/last-commit/nexe-afk/changsha_mahjong)
 
 ---
 
-## 🎮 玩法介绍
-
-长沙红中麻将，**4人游戏**，112张牌（条筒万各36张 + 4张红中）。
-
-### 核心规则
-
-| 特色 | 说明 |
-|------|------|
-| 🀄 **红中万能** | 红中可以代替任何牌，组合面子用 |
-| 🩸 **血战到底** | 第一个胡牌不结束，直到3人胡牌 |
-| 🐦 **扎鸟** | 胡牌后翻4张牌，中1/5/9或红中=×2倍 |
-| 🈳 **缺一色** | 胡牌时不能三门全有（最多两门） |
-| 🌞 **天胡/地胡** | 第一圈直接胡或点炮，倍率最高 |
-
-### 胡牌牌型
-
-| 牌型 | 倍数 |
-|------|------|
-| 平胡（标准胡） | ×1 |
-| 七小对 | ×2 |
-| 碰碰胡 | ×2 |
-| 清一色 | ×4 |
-| 天胡 | ×8 |
-
-> 牌型可叠加，例如 清一色七小对 = ×8
-
-### 操作方式
-
-1. **出牌**：点击手牌选中 → 再点击打出
-2. **碰/杠/胡**：按钮亮起时点击即可
-3. **过**：跳过当前操作
-4. **AI 对手**：自动行动，无需操作
-
----
-
-## 🚀 快速开始
+## 快速开始
 
 ```bash
-# 直接用浏览器打开
-open index.html
-
-# 或启动本地服务器
 python3 -m http.server 8080
 # 浏览器打开 http://localhost:8080
 ```
 
-## 📦 项目结构
+或者直接双击 `index.html`（部分浏览器需要本地服务器才能加载 PixiJS CDN）。
+
+---
+
+## 玩法规则
+
+4人游戏，112张牌（条/筒/万各36张 + 红中4张）。
+
+### 长沙特色规则
+
+| 规则 | 说明 |
+| ---- | ---- |
+| 红中万能 | 红中可替代任意一张牌，用于组成面子或将眼 |
+| 血战到底 | 第一人胡牌后继续，直到3人胡牌才结束 |
+| 缺一色 | 胡牌时手牌最多只能有两门花色 |
+| 扎鸟 | 每次胡牌后翻4张牌，翻到1/5/9/红中各×2倍 |
+| 天胡 | 发牌后直接胡，倍率×8 |
+
+### 胡牌牌型与倍数
+
+| 牌型 | 倍数 | 说明 |
+| ---- | ---- | ---- |
+| 平胡 | ×1 | 标准 4面子+1将 |
+| 七小对 | ×2 | 7个对子 |
+| 碰碰胡 | ×2 | 所有面子均为刻子 |
+| 清一色 | ×4 | 手牌只含一门花色（红中不算） |
+| 天胡 | ×8 | 起手即胡 |
+
+牌型可叠加相乘，例如清一色七小对 = ×8，再扎2鸟 = ×32。单局上限 1024 分。
+
+### 操作
+
+- 点击手牌选中（牌会上移高亮）→ 再次点击或按 `Enter`/`Space` 打出
+- `←` `→` 方向键切换选中牌
+- 碰/杠/胡按钮亮起时点击即可；点"过"跳过
+- 首次打开会有3步新手引导
+
+---
+
+## 项目结构
 
 ```
 changsha_mahjong/
 │
-├── index.html              (80行)  入口文件
-├── README.md                       项目说明
-├── SUMMARY.md                      全流程汇总
-├── DEVELOPMENT.md                  开发文档
+├── index.html                     入口（89行）
 │
-├── js/                → 🧠 算法层（纯逻辑，不依赖引擎）
-│   ├── core.js        (180行)  牌定义、牌墙、洗牌
-│   ├── hu.js          (244行)  胡牌判定算法（核心）
-│   ├── ai.js          ( 96行)  AI 出牌策略
-│   └── rule.js        (144行)  长沙红中规则
+├── js/                            算法层 — 纯逻辑，无 DOM/引擎依赖
+│   ├── core.js        (180行)     牌编码、牌墙、发牌、工具函数、gameState
+│   ├── hu.js          (240行)     胡牌判定（标准胡/七小对/红中万能）、听牌检测、扎鸟
+│   ├── rule.js        (144行)     牌型检测（清一色/碰碰胡）、倍数计算
+│   ├── ai.js          (107行)     AI 出牌评分、碰/杠/胡决策、三档难度参数
+│   ├── difficulty.js  (152行)     PlayerTracker、adjustDifficulty、DDAManager
+│   ├── ai_logger.js   ( 95行)     AI 决策日志，window.AI_DEBUG=true 开启
+│   ├── game-feel.js   (213行)     选牌高亮、出牌抛物线、碰杠闪光、胡牌特效、中鸟粒子
+│   ├── tutorial.js    (265行)     新手引导（3步遮罩）、操作反馈、触屏适配
+│   └── test_suite.js  (266行)     67个断言测试，node js/test_suite.js 可直接运行
 │
-├── engine/             → 🎮 引擎层（PixiJS WebGL）
-│   ├── sound.js       ( 89行)  音效系统
-│   ├── tile.js        (209行)  3D浮雕麻将牌
-│   ├── animation.js   (263行)  动画系统
-│   ├── renderer.js    ( 12行)  渲染桥接
-│   ├── scenes.js      (500行)  游戏场景
-│   ├── flow.js        (214行)  游戏流程
-│   └── game_engine.js (272行)  引擎主控
+├── engine/                        引擎层 — PixiJS 8 渲染
+│   ├── tile.js        (209行)     3D 浮雕麻将牌（阴影/光晕/红中特殊样式）
+│   ├── animation.js   (263行)     Tween 缓动系统（easeOutBack/Elastic/Bounce）
+│   ├── scenes.js      (500行)     牌桌、手牌布局、弹窗、分数渲染
+│   ├── flow.js        (214行)     回合控制、出牌、碰/杠/胡逻辑
+│   ├── game_engine.js (204行)     引擎主控、键鼠绑定、UI 更新
+│   ├── sound.js       ( 89行)     Web Audio API 音效（零文件依赖）
+│   └── renderer.js    ( 12行)     渲染桥接占位
 │
-├── engine/prompts/  → 📜 49条 AI 提示词全家桶
-│   ├── prompts.json                 (6条)  原始开发
-│   ├── prompts_v2.json              (10条) 高级开发
-│   ├── monetization_prompts.json    (10条) 盈利模式
-│   ├── crypto_payment_prompts.json  ( 7条) 加密支付
-│   ├── economy_system_prompts.json  ( 5条) 经济体系
-│   └── fullstack_prompts.json       (11条) 全栈流程
-│
-└── docs/              → 📄 运营文档
-    ├── payment_economy_manual.md    支付+经济手册
-    └── economy_dashboard_design.md  经济仪表板设计
+├── claude_prompts/                Claude 4.7 开发提示词（13个模块）
+├── docs/                          运营文档（支付手册、经济仪表板设计）
+└── engine/prompts/                历史 Codex 提示词存档（49条）
 ```
 
 ---
 
-## 📜 AI 提示词体系（49条）
+## 技术实现
 
-| 分类 | 条数 | 覆盖范围 |
-|------|------|---------|
-| 🎮 **游戏开发** | 10 | 新手引导 / 核心规则 / AI策略 / DDA / 奖励 / 社交 / 测试 / 游戏感 / 日志 / Meta |
-| 💰 **盈利变现** | 10 | IAP / 广告 / 会员 / 推荐 / 任务 / 赛事 / 社交激励 / LTV / DDA联动 / Meta |
-| 🔗 **加密支付** | 7 | 通用 SDK / 订单创建 / Webhook / 多链多币种 / 安全反欺诈 / 多语言 / DevOps |
-| 🏦 **经济体系** | 5 | 货币设计 / 来源消耗 / 虚拟市场 / 奖励曲线 / 监控仪表板 |
-| 🏗️ **全栈流程** | 11 | 需求 / 架构 / UI原型 / 前端 / 后端 / 支付集成 / 经济 / 美术 / 部署 / 测试 / 文档 |
+### 算法层
 
-每条包含: **Role → Task → Context → Requirements → I/O Contract → Output Format → Verification Plan**
+- 胡牌判定采用「先七小对 O(n) → 再标准胡回溯」两阶段策略，参考 [q_algorithm](https://github.com/yuanfengyun/q_algorithm) 的优化思路
+- 红中万能牌在回溯中作为通配符展开：补刻子(AA+H)、补顺子(A+H+C / AB+H)
+- 七小对算法修正了「不同花色单张不可互相配对」的逻辑错误
+- 听牌检测：遍历28种牌逐张插入后调用 `canWin`
 
----
+### AI 策略
 
-## 🎯 长沙红中特色
+参考 [mahjong-helper](https://github.com/EndlessCheng/mahjong-helper) 的评分体系：
 
-- ✅ 红中万能牌
-- ✅ 血战到底
-- ✅ 扎鸟（翻牌倍率 ×2^N）
-- ✅ 缺一色
-- ✅ 天胡/地胡
+- 出牌：对每张手牌计算「成对+20 / 两面搭+15 / 听牌+30 / 边张-5」综合分，取最低分打出
+- 红中永不打出（分值 -9999）
+- 决策优先级：能胡必胡 > 有利则碰/杠 > pass
 
----
+### 动态难度（DDA）
 
-## 🛠 技术栈
+连胜 ≥3 局或平均分 >20 自动升级；连败 ≥3 局或平均分 <5 自动降级。数据持久化到 `localStorage`，刷新后保持。
 
-| 层 | 技术 |
-|----|------|
-| 引擎 | PixiJS 8 (WebGL 2D) |
-| 语言 | JavaScript ES6+ |
-| 音效 | Web Audio API（零文件依赖） |
-| 动画 | 自建缓动系统（easeOutBack） |
-| 存储 | localStorage |
-| 部署 | Docker + Nginx + Certbot |
+| 难度 | 随机出牌率 | 碰牌阈值 | 盲胡概率 |
+| ---- | ---- | ---- | ---- |
+| easy | 30% | 5 | 30% |
+| normal | 5% | 3 | 5% |
+| hard | 0% | 1 | 0% |
 
----
+### 技术栈
 
-## 📑 文档
-
-- [SUMMARY.md](SUMMARY.md) — 全开发流程汇总
-- [DEVELOPMENT.md](DEVELOPMENT.md) — 开发文档（含 AI 提示词说明）
-- [docs/payment_economy_manual.md](docs/payment_economy_manual.md) — 支付+经济运营手册
-- [docs/economy_dashboard_design.md](docs/economy_dashboard_design.md) — 经济仪表板设计
-- [engine/prompts/](engine/prompts/) — 49 条 AI 提示词全家桶
+| 层 | 方案 |
+| ---- | ---- |
+| 渲染 | PixiJS 8 (WebGL 2D) CDN |
+| 语言 | JavaScript ES6+，无构建工具 |
+| 音效 | Web Audio API，零音频文件 |
+| 动画 | 自建 Tween（easeOutBack/Elastic/Bounce） |
+| 持久化 | localStorage |
 
 ---
 
-## 📜 License
+## 调试
+
+```javascript
+// 浏览器控制台开启 AI 决策日志（console.table 格式）
+window.AI_DEBUG = true
+
+// 重置新手引导
+TutorialManager.reset()
+
+// 重置难度记录
+DDAManager.tracker.reset()
+```
+
+### 运行测试（需 Node.js）
+
+```bash
+node js/test_suite.js
+# 测试完成: 67 个  ✅ 67 通过  ❌ 0 失败
+```
+
+---
+
+## License
 
 MIT

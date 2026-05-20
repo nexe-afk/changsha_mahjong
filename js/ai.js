@@ -1,5 +1,16 @@
 // ===== 长沙红中麻将 - AI 逻辑 =====
 
+// 三档难度参数（供 difficulty.js 的 DDAManager 使用）
+function getDifficultyParams(level) {
+  const presets = {
+    easy:   { discardNoise: 0.3,  pengThreshold: 5, huBlindChance: 0.3 },
+    normal: { discardNoise: 0.05, pengThreshold: 3, huBlindChance: 0.05 },
+    hard:   { discardNoise: 0,    pengThreshold: 1, huBlindChance: 0 },
+  };
+  return presets[level] || presets.normal;
+}
+
+
 /**
  * AI 出牌决策
  */

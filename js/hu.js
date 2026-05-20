@@ -165,19 +165,15 @@ function checkSevenPairs(hand, zhong) {
   let pairs = 0;
   let singles = 0;
 
-  for (const [tile, cnt] of Object.entries(counts)) {
+  for (const [, cnt] of Object.entries(counts)) {
     pairs += Math.floor(cnt / 2);
     singles += cnt % 2;
   }
 
-  // 7对 = 14张 = 7个对子
-  // 总张数 = 手牌数
-  const totalTiles = hand.length;
-
-  // 每缺一对，需要2个红中
-  const needPairs = 7 - pairs;
-  return needPairs * 2 <= zhong + singles;
-  // singles: 落单的牌也可以用红中配对
+  // 每个单张需要1个红中配对（不同牌的单张不能互相配对）
+  if (singles > zhong) return false;
+  const remainZhong = zhong - singles;
+  return pairs + singles + Math.floor(remainZhong / 2) >= 7;
 }
 
 /**
