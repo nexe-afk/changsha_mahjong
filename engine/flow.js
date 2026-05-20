@@ -1,26 +1,5 @@
-// ===== 游戏流程（引擎版） =====
-
-// 游戏状态移到 core.js 里
-if (typeof gameState === 'undefined') {
-  var gameState = {
-    wall: [],
-    players: [
-      { hand: [], melons: [], discards: [], score: 0, isHuman: true },
-      { hand: [], melons: [], discards: [], score: 0, isHuman: false },
-      { hand: [], melons: [], discards: [], score: 0, isHuman: false },
-      { hand: [], melons: [], discards: [], score: 0, isHuman: false },
-    ],
-    currentPlayer: 0,
-    lastDiscard: null,
-    lastDiscardPlayer: -1,
-    isProcessing: false,
-    turnPhase: 'idle',
-    selectedTile: null,
-    gameOver: false,
-    huCount: 0,
-    huPlayers: [],
-  };
-}
+// ===== 游戏流程（引擎版）=====
+// gameState 在 js/core.js 中定义
 
 // ===== 回合控制 =====
 

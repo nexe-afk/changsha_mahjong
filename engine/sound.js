@@ -1,87 +1,42 @@
-// ===== 🎵 Web Audio 音效系统 =====
-// 纯代码合成音效，零文件依赖
+// ===== 音效系统（真实 MP3 文件）=====
 
 class SoundFX {
   constructor() {
-    this.ctx = null;
     this.enabled = true;
+    this.bgMusic = null;
   }
 
-  _init() {
-    if (this.ctx) return;
-    try {
-      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    } catch (e) {
-      this.enabled = false;
-    }
-  }
-
-  _play(freq, duration, type = 'sine', volume = 0.15) {
+  _play(path, volume = 0.7) {
     if (!this.enabled) return;
-    this._init();
-    if (!this.ctx) return;
-
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-    gain.gain.setValueAtTime(volume, this.ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
-
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-    osc.start(this.ctx.currentTime);
-    osc.stop(this.ctx.currentTime + duration);
+    const a = new Audio(path);
+    a.volume = volume;
+    a.play().catch(() => {});
   }
 
-  /** 🃏 出牌 */
-  discard() {
-    this._play(600, 0.08, 'square', 0.08);
-    setTimeout(() => this._play(400, 0.05, 'square', 0.05), 50);
+  discard() { this._play('assets/sound/出牌音效.mp3', 0.65); }
+  peng()    { this._play('assets/sound/碰音效.mp3',   0.7);  }
+  gang()    { this._play('assets/sound/杠音效.mp3',   0.7);  }
+  hu()      { this._play('assets/sound/胡音效.mp3',   0.8);  }
+  draw()    { this._play('assets/sound/发牌音效.mp3', 0.5);  }
+  click()   { this._play('assets/sound/牌点击音效.mp3', 0.45); }
+  error()   { this._play('assets/sound/牌点击音效.mp3', 0.2); }
+
+  startBGM() {
+    if (!this.enabled) return;
+    if (this.bgMusic) return;
+    this.bgMusic = new Audio('assets/sound/背景音乐.mp3');
+    this.bgMusic.loop   = true;
+    this.bgMusic.volume = 0.18;
+    this.bgMusic.play().catch(() => {});
   }
 
-  /** ✋ 碰 */
-  peng() {
-    this._play(300, 0.15, 'triangle', 0.12);
-    setTimeout(() => this._play(500, 0.15, 'triangle', 0.12), 100);
-    setTimeout(() => this._play(700, 0.2, 'triangle', 0.12), 200);
-  }
-
-  /** 📢 杠 */
-  gang() {
-    this._play(200, 0.2, 'sawtooth', 0.1);
-    setTimeout(() => this._play(300, 0.2, 'sawtooth', 0.1), 150);
-    setTimeout(() => this._play(400, 0.2, 'sawtooth', 0.1), 300);
-    setTimeout(() => this._play(500, 0.3, 'sawtooth', 0.1), 450);
-  }
-
-  /** 🀄 胡 */
-  hu() {
-    for (let i = 0; i < 5; i++) {
-      setTimeout(() => {
-        this._play(400 + i * 200, 0.15, 'sine', 0.12);
-      }, i * 100);
-    }
-  }
-
-  /** 🎯 摸牌 */
-  draw() {
-    this._play(800, 0.06, 'sine', 0.06);
-  }
-
-  /** ✅ 按钮点击 */
-  click() {
-    this._play(1000, 0.04, 'square', 0.05);
-  }
-
-  /** ❌ 错误 */
-  error() {
-    this._play(200, 0.3, 'sawtooth', 0.1);
+  stopBGM() {
+    if (this.bgMusic) { this.bgMusic.pause(); this.bgMusic = null; }
   }
 
   toggle() {
     this.enabled = !this.enabled;
+    if (!this.enabled) this.stopBGM();
     return this.enabled;
   }
 }

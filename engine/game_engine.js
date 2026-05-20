@@ -71,6 +71,15 @@ function showPlayerActions(actions, tile) {
   });
 }
 
+// 胡牌类型中文名
+function huTypeName(type) {
+  const map = {
+    pinghu: '平胡', qixiaodui: '七小对', pengpenghu: '碰碰胡',
+    qingyise: '清一色', tianhu: '天胡', dihu: '地胡',
+  };
+  return map[type] || type;
+}
+
 // ===== 胡牌弹窗 =====
 function showHuModal(playerIdx, type) {
   gameState.huCount++;

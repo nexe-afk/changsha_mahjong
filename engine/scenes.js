@@ -1,4 +1,4 @@
-// ===== 🏟️ 专业游戏场景 =====
+// ===== 游戏场景（真实资源版）=====
 
 class GameScene {
   constructor(app) {
@@ -6,119 +6,84 @@ class GameScene {
     this.W = app.screen.width;
     this.H = app.screen.height;
 
-    // 渲染层级（Z-order）
     this.layers = {
-      bg: new PIXI.Container(),
-      table: new PIXI.Container(),
-      tiles: new PIXI.Container(),
-      fg: new PIXI.Container(),
-      ui: new PIXI.Container(),
-      modal: new PIXI.Container(),
+      bg:        new PIXI.Container(),
+      table:     new PIXI.Container(),
+      tiles:     new PIXI.Container(),
+      fg:        new PIXI.Container(),
+      ui:        new PIXI.Container(),
+      modal:     new PIXI.Container(),
       particles: new PIXI.Container(),
     };
 
-    // 排序
-    Object.values(this.layers).forEach((l, i) => l.zIndex = i * 10);
-    for (const l of Object.values(this.layers)) {
-      app.stage.addChild(l);
-    }
+    Object.values(this.layers).forEach((l, i) => { l.zIndex = i * 10; });
+    for (const l of Object.values(this.layers)) app.stage.addChild(l);
     app.stage.sortableChildren = true;
 
     this._buildTable();
     this._buildUI();
   }
 
-  // ===== 牌桌 =====
+  // ===== 牌桌背景 =====
   _buildTable() {
     const w = this.W, h = this.H;
 
-    // 桌面毛毡纹理（纯代码模拟）
-    const bg = new PIXI.Graphics();
-    bg.rect(0, 0, w, h);
-    bg.fill({ color: 0x1a472a });
+    // 真实桌面图片
+    const bg = PIXI.Sprite.from('assets/ui/table.png');
+    bg.width  = w;
+    bg.height = h;
     this.layers.bg.addChild(bg);
 
-    // 桌布纹理线
-    for (let i = 0; i < 60; i++) {
-      const line = new PIXI.Graphics();
-      line.moveTo(Math.random() * w, Math.random() * h);
-      line.lineTo(Math.random() * w, Math.random() * h);
-      line.stroke({ width: 0.5, color: 0x1f5433, alpha: 0.2 });
-      this.layers.bg.addChild(line);
-    }
-
-    // 中心圆盘
-    const center = new PIXI.Graphics();
-    center.roundRect(w / 2 - 200, h / 2 - 110, 400, 220, 30);
-    center.fill({ color: 0x0f3320, alpha: 0.6 });
-    center.stroke({ width: 1, color: 0x2d5a3d, alpha: 0.3 });
-    this.layers.bg.addChild(center);
-
-    // 内圈装饰
-    const ring = new PIXI.Graphics();
-    ring.roundRect(w / 2 - 160, h / 2 - 75, 320, 150, 20);
-    ring.stroke({ width: 0.5, color: 0xf1c40f, alpha: 0.08 });
-    this.layers.bg.addChild(ring);
-
-    // 中央 LOGO
-    const logo = new PIXI.Text({
-      text: '🀄',
-      style: { fontSize: 32, fill: 0x2d5a3d, alpha: 0.3 }
-    });
-    logo.anchor.set(0.5);
-    logo.x = w / 2;
-    logo.y = h / 2;
-    this.layers.bg.addChild(logo);
-
-    // 座位标签
+    // 玩家座位标签
     this._seatLabels = {};
     const seats = [
-      { id: 0, text: '🧑 你', x: w / 2, y: h - 8 },
-      { id: 1, text: '🤖 下家', x: w - 8, y: h / 2 },
-      { id: 2, text: '🤖 对家', x: w / 2, y: 8 },
-      { id: 3, text: '🤖 上家', x: 8, y: h / 2 },
+      { id: 0, text: '你',   x: w / 2,     y: h - 16, avatar: 'assets/avatar/avatar.png'  },
+      { id: 1, text: '下家', x: w - 28,    y: h / 2,  avatar: 'assets/avatar/avatar2.png' },
+      { id: 2, text: '对家', x: w / 2,     y: 16,     avatar: 'assets/avatar/avatar3.png' },
+      { id: 3, text: '上家', x: 28,        y: h / 2,  avatar: 'assets/avatar/avatar4.png' },
     ];
 
     for (const s of seats) {
       const label = new PIXI.Text({
         text: s.text,
         style: {
-          fontFamily: 'PingFang SC, sans-serif',
-          fontSize: 12,
-          fill: 0x7f8c8d,
-          letterSpacing: 1,
-        }
+          fontFamily: 'PingFang SC, Microsoft YaHei, sans-serif',
+          fontSize:   13,
+          fill:       0xd4e8d4,
+          fontWeight: 'bold',
+          dropShadow: { color: 0x000000, blur: 3, distance: 1, alpha: 0.6 },
+        },
       });
       label.anchor.set(0.5);
       label.x = s.x;
       label.y = s.y;
-      this.layers.bg.addChild(label);
+      this.layers.ui.addChild(label);
       this._seatLabels[s.id] = label;
     }
   }
 
-  // ===== UI =====
+  // ===== 状态栏 =====
   _buildUI() {
-    // 状态文字
+    const pill = new PIXI.Graphics();
+    pill.roundRect(0, 0, 320, 28, 14);
+    pill.fill({ color: 0x000000, alpha: 0.45 });
+    pill.x = this.W / 2 - 160;
+    pill.y = this.H / 2 - 135;
+    this.layers.ui.addChild(pill);
+    this._statusPill = pill;
+
     this._statusText = new PIXI.Text({
       text: '',
       style: {
-        fontFamily: 'PingFang SC, sans-serif',
-        fontSize: 13,
-        fill: 0xbdc3c7,
-        letterSpacing: 1,
-      }
+        fontFamily: 'PingFang SC, Microsoft YaHei, sans-serif',
+        fontSize:   13,
+        fill:       0xf0f0f0,
+      },
     });
     this._statusText.anchor.set(0.5);
     this._statusText.x = this.W / 2;
-    this._statusText.y = this.H / 2 - 90;
+    this._statusText.y = this.H / 2 - 121;
     this.layers.ui.addChild(this._statusText);
-
-    // 计时条
-    this._timerBar = new PIXI.Graphics();
-    this._timerBar.x = this.W / 2 - 80;
-    this._timerBar.y = this.H / 2 - 70;
-    this.layers.ui.addChild(this._timerBar);
   }
 
   // ===== 渲染手牌 =====
@@ -126,76 +91,78 @@ class GameScene {
     const key = `hand_${playerIdx}`;
     const old = this.layers.tiles.getChildByName(key);
     if (old) { this.layers.tiles.removeChild(old); old.destroy({ children: true }); }
-
     if (!hand || hand.length === 0) return;
+
     const n = Math.min(hand.length, 18);
+    const container = new PIXI.Container();
+    container.name = key;
 
     if (isHuman) {
-      // ===== 玩家：底部横排，专业展示 =====
-      const totalW = (TILE.BIG_W - 1) * n;
-      const startX = (this.W - totalW) / 2 + TILE.BIG_W / 2;
-      const y = this.H - 80;
-
-      const container = new PIXI.Container();
-      container.name = key;
+      // 底部横排
+      const gap   = TILE.BIG_W - 1;
+      const totalW = gap * (n - 1) + TILE.BIG_W;
+      const startX = (this.W - totalW) / 2;
+      const y      = this.H - TILE.BIG_H - 10;
 
       for (let i = 0; i < n; i++) {
         const tile = createProTile(hand[i], 1);
-        tile.x = startX + i * (TILE.BIG_W - 1);
-        tile.y = y;
+        tile.x = startX + i * gap;
+        tile.y = (i === selectedIdx) ? y - 12 : y;
         tile.tileIndex = i;
         tile.draggable = true;
+
+        // 选中高亮：金框
+        if (i === selectedIdx) {
+          const glow = new PIXI.Graphics();
+          glow.roundRect(-2, -2, TILE.BIG_W + 4, TILE.BIG_H + 4, 6);
+          glow.stroke({ width: 3, color: 0xf1c40f, alpha: 1 });
+          tile.addChildAt(glow, 0);
+        }
         container.addChild(tile);
       }
-      this.layers.tiles.addChild(container);
-      this._playerHandContainer = container;
 
     } else {
-      // ===== AI 玩家：牌背面 =====
-      const backScale = 0.65;
-      const bw = TILE.BIG_W * backScale - 1;
-      const bh = TILE.BIG_H * backScale;
-      const n2 = Math.min(hand.length, 14);
-      const container = new PIXI.Container();
-      container.name = key;
+      // AI：牌背面
+      const sc  = 0.72;
+      const bw  = TILE.BIG_W * sc;
+      const bh  = TILE.BIG_H * sc;
+      const gap = bw - 1;
+      const n2  = Math.min(hand.length, 14);
 
-      let startX, startY;
       if (playerIdx === 2) {
-        // 对家 - 顶部
-        const totalW = bw * n2;
-        startX = (this.W - totalW) / 2 + bw / 2;
-        startY = 30;
+        // 对家：顶部横排
+        const totalW = gap * (n2 - 1) + bw;
+        const sx = (this.W - totalW) / 2;
         for (let i = 0; i < n2; i++) {
-          const back = createProTileBack(backScale);
-          back.x = startX + i * bw;
-          back.y = startY;
+          const back = createProTileBack(sc);
+          back.x = sx + i * gap;
+          back.y = 28;
           container.addChild(back);
         }
       } else if (playerIdx === 1) {
-        // 下家 - 右侧竖排
-        const totalH = bh * n2;
-        startX = this.W - 35;
-        startY = (this.H - totalH) / 2 + bh / 2;
+        // 下家：右侧竖排
+        const totalH = (bh - 1) * (n2 - 1) + bh;
+        const sy = (this.H - totalH) / 2;
         for (let i = 0; i < n2; i++) {
-          const back = createProTileBack(backScale);
-          back.x = startX;
-          back.y = startY + i * (bh - 1);
+          const back = createProTileBack(sc);
+          back.x = this.W - bw - 12;
+          back.y = sy + i * (bh - 1);
           container.addChild(back);
         }
       } else if (playerIdx === 3) {
-        // 上家 - 左侧竖排
-        const totalH = bh * n2;
-        startX = 35;
-        startY = (this.H - totalH) / 2 + bh / 2;
+        // 上家：左侧竖排
+        const totalH = (bh - 1) * (n2 - 1) + bh;
+        const sy = (this.H - totalH) / 2;
         for (let i = 0; i < n2; i++) {
-          const back = createProTileBack(backScale);
-          back.x = startX;
-          back.y = startY + i * (bh - 1);
+          const back = createProTileBack(sc);
+          back.x = 12;
+          back.y = sy + i * (bh - 1);
           container.addChild(back);
         }
       }
-      this.layers.tiles.addChild(container);
     }
+
+    this.layers.tiles.addChild(container);
   }
 
   // ===== 渲染碰/杠区 =====
@@ -203,34 +170,33 @@ class GameScene {
     const key = `melons_${playerIdx}`;
     const old = this.layers.tiles.getChildByName(key);
     if (old) { this.layers.tiles.removeChild(old); old.destroy({ children: true }); }
-
     if (!melons || melons.length === 0) return;
 
+    const sc  = 0.58;
+    const tw  = TILE.BIG_W * sc;
     const container = new PIXI.Container();
     container.name = key;
-    let x = 15, y;
 
-    if (playerIdx === 0) y = this.H - 155;
-    else if (playerIdx === 2) y = 75;
-    else if (playerIdx === 1) y = this.H / 2 + 60;
-    else y = this.H / 2 + 60;
+    let x = 16, y;
+    if      (playerIdx === 0) y = this.H - TILE.BIG_H - 10 - TILE.BIG_H * sc - 8;
+    else if (playerIdx === 2) y = 28 + TILE.BIG_H * 0.72 + 8;
+    else                      y = this.H / 2 - TILE.BIG_H * sc / 2;
 
     for (const m of melons) {
       for (const t of m.tiles) {
-        const tile = createProTile(t, 0.55);
+        const tile = createProTile(t, sc);
         tile.x = x;
         tile.y = y;
         tile.eventMode = 'none';
-        tile.cursor = 'default';
         container.addChild(tile);
-        x += TILE.SMALL_W - 2;
+        x += tw - 1;
       }
       x += 6;
     }
     this.layers.tiles.addChild(container);
   }
 
-  // ===== 最后打出的牌（中心大牌） =====
+  // ===== 中心弃牌 =====
   _centerTile = null;
 
   renderCenterDiscard(tileCode) {
@@ -239,85 +205,56 @@ class GameScene {
       this._centerTile.destroy({ children: true });
       this._centerTile = null;
     }
-    if (tileCode === null || tileCode === undefined) return;
+    if (tileCode == null) return;
 
-    const tile = createProTile(tileCode, 1.4);
-    tile.x = this.W / 2 - TILE.BIG_W * 1.4 / 2;
-    tile.y = this.H / 2 - TILE.BIG_H * 1.4 / 2;
+    const sc   = 1.5;
+    const tile = createProTile(tileCode, sc);
+    tile.x = this.W / 2 - TILE.BIG_W * sc / 2;
+    tile.y = this.H / 2 - TILE.BIG_H * sc / 2;
     tile.eventMode = 'none';
-    tile.cursor = 'default';
     this.layers.tiles.addChild(tile);
     this._centerTile = tile;
   }
 
-  // ===== 操作按钮 =====
+  // ===== 操作按钮（真实图片）=====
   _actionButtons = [];
-  _onActionCallback = null;
 
   showActions(availableActions, callback) {
     this.hideActions();
-    this._onActionCallback = callback;
 
-    const buttons = [
-      { key: 'hu', label: '胡', color: 0xe74c3c, active: availableActions.includes('hu') },
-      { key: 'peng', label: '碰', color: 0x3498db, active: availableActions.includes('peng') },
-      { key: 'gang', label: '杠', color: 0x9b59b6, active: availableActions.includes('gang') },
-      { key: 'pass', label: '过', color: 0x7f8c8d, active: true },
+    const BTN_DEFS = [
+      { key: 'hu',   img: 'assets/operate/option_hu.png'   },
+      { key: 'peng', img: 'assets/operate/option_peng.png' },
+      { key: 'gang', img: 'assets/operate/option_gang.png' },
+      { key: 'pass', img: 'assets/operate/option_guo.png'  },
     ];
 
-    const btnW = 64, btnH = 38, gap = 10;
-    const totalW = buttons.length * btnW + (buttons.length - 1) * gap;
-    const startX = this.W / 2 - totalW / 2;
-    const y = this.H / 2 + 70;
+    const BW = 90, BH = 75, GAP = 12;
+    const active = BTN_DEFS.filter(b => b.key === 'pass' || availableActions.includes(b.key));
+    const totalW = active.length * BW + (active.length - 1) * GAP;
+    let sx = this.W / 2 - totalW / 2;
+    const y  = this.H - TILE.BIG_H - BH - 18;
 
-    for (let i = 0; i < buttons.length; i++) {
-      const b = buttons[i];
-      const x = startX + i * (btnW + gap);
+    for (const b of active) {
+      const sprite = PIXI.Sprite.from(b.img);
+      sprite.width  = BW;
+      sprite.height = BH;
+      sprite.x = sx;
+      sprite.y = y;
+      sprite.alpha      = 1;
+      sprite.eventMode  = 'static';
+      sprite.cursor     = 'pointer';
 
-      const bg = new PIXI.Graphics();
-      bg.roundRect(0, 0, btnW, btnH, 10);
-      bg.fill({ color: b.active ? b.color : 0x555555, alpha: b.active ? 1 : 0.4 });
-
-      // 按钮高光
-      const hl = new PIXI.Graphics();
-      hl.roundRect(2, 2, btnW - 4, btnH / 2 - 2, 8);
-      hl.fill({ color: 0xffffff, alpha: 0.15 });
-
-      const text = new PIXI.Text({
-        text: b.label,
-        style: { fontFamily: 'PingFang SC, sans-serif', fontSize: 15, fill: 0xffffff, fontWeight: 'bold' }
+      sprite.on('pointerover',  () => { sprite.scale.set(1.08); sprite.x = sx - BW * 0.04; sprite.y = y - BH * 0.04; });
+      sprite.on('pointerout',   () => { sprite.scale.set(1);    sprite.x = sx;             sprite.y = y;             });
+      sprite.on('pointerdown',  () => {
+        this.hideActions();
+        if (callback) callback(b.key);
       });
-      text.anchor.set(0.5);
-      text.x = btnW / 2;
-      text.y = btnH / 2;
 
-      const container = new PIXI.Container();
-      container.addChild(bg);
-      container.addChild(hl);
-      container.addChild(text);
-      container.x = x;
-      container.y = y;
-      container.eventMode = b.active ? 'static' : 'none';
-      container.cursor = b.active ? 'pointer' : 'default';
-      container.alpha = b.active ? 1 : 0.3;
-
-      if (b.active) {
-        container.on('pointerdown', () => {
-          this.hideActions();
-          if (callback) callback(b.key);
-        });
-        container.on('pointerover', () => {
-          bg.scale.set(0.95);
-          bg.x = 2; bg.y = 2;
-        });
-        container.on('pointerout', () => {
-          bg.scale.set(1);
-          bg.x = 0; bg.y = 0;
-        });
-      }
-
-      this.layers.ui.addChild(container);
-      this._actionButtons.push(container);
+      this.layers.ui.addChild(sprite);
+      this._actionButtons.push(sprite);
+      sx += BW + GAP;
     }
   }
 
@@ -329,12 +266,19 @@ class GameScene {
     this._actionButtons = [];
   }
 
-  // ===== 设置状态文字 =====
+  // ===== 状态文字 =====
   setStatus(msg) {
-    this._statusText.text = msg + `  |  余牌 ${gameState.wall.length}`;
+    const full = `${msg}  |  余牌 ${gameState.wall.length}`;
+    this._statusText.text = full;
+    // 动态调整胶囊宽度
+    const pw = this._statusText.width + 32;
+    this._statusPill.clear();
+    this._statusPill.roundRect(0, 0, pw, 28, 14);
+    this._statusPill.fill({ color: 0x000000, alpha: 0.45 });
+    this._statusPill.x = this.W / 2 - pw / 2;
   }
 
-  // ===== 得分显示 =====
+  // ===== 得分 =====
   _scoreTexts = {};
 
   renderScores() {
@@ -344,38 +288,36 @@ class GameScene {
         this.layers.ui.removeChild(this._scoreTexts[key]);
         this._scoreTexts[key].destroy();
       }
-
       const score = gameState.players[i].score;
-      const text = new PIXI.Text({
-        text: `${score}`,
+      const t = new PIXI.Text({
+        text: `${score > 0 ? '+' : ''}${score}`,
         style: {
           fontFamily: 'monospace',
-          fontSize: 18,
+          fontSize:   17,
           fontWeight: 'bold',
-          fill: score > 0 ? 0xf1c40f : 0x7f8c8d,
-        }
+          fill:       score > 0 ? 0xf1c40f : score < 0 ? 0xff6b6b : 0xaabbaa,
+          dropShadow: { color: 0x000000, blur: 2, distance: 1, alpha: 0.7 },
+        },
       });
-
-      let x, y;
-      switch (i) {
-        case 0: x = this.W / 2 + 80; y = this.H - 30; break;
-        case 1: x = this.W - 30; y = this.H / 2 + 40; break;
-        case 2: x = this.W / 2 + 80; y = 30; break;
-        case 3: x = 80; y = this.H / 2 + 40; break;
-      }
-      text.x = x;
-      text.y = y;
-      this.layers.ui.addChild(text);
-      this._scoreTexts[key] = text;
+      const pos = [
+        { x: this.W / 2 + 90, y: this.H - 22 },
+        { x: this.W - 22,     y: this.H / 2 + 50 },
+        { x: this.W / 2 + 90, y: 22 },
+        { x: 70,              y: this.H / 2 + 50 },
+      ][i];
+      t.x = pos.x; t.y = pos.y;
+      this.layers.ui.addChild(t);
+      this._scoreTexts[key] = t;
     }
   }
 
-  // ===== 弹窗系统 =====
+  // ===== 弹窗 =====
   showModal(title, lines, buttonText, onButton) {
     this.hideModal();
 
-    const mw = 340, mh = 280;
-    const x = this.W / 2 - mw / 2, y = this.H / 2 - mh / 2;
+    const mw = 360, mh = Math.max(280, 120 + lines.length * 30);
+    const mx = this.W / 2 - mw / 2;
+    const my = this.H / 2 - mh / 2;
 
     const modal = new PIXI.Container();
     modal.name = 'modal';
@@ -383,110 +325,109 @@ class GameScene {
     // 遮罩
     const mask = new PIXI.Graphics();
     mask.rect(0, 0, this.W, this.H);
-    mask.fill({ color: 0x000000, alpha: 0.55 });
+    mask.fill({ color: 0x000000, alpha: 0.6 });
     mask.eventMode = 'static';
     modal.addChild(mask);
 
     // 弹窗背景
     const bg = new PIXI.Graphics();
-    bg.roundRect(x, y, mw, mh, 20);
-    bg.fill({ color: 0xffffff });
-    bg.shadow = { color: 0x000000, blur: 20, offsetX: 0, offsetY: 5, alpha: 0.3 };
+    bg.roundRect(mx, my, mw, mh, 20);
+    bg.fill({ color: 0x1a3a1a });
+    bg.stroke({ width: 2, color: 0x4caf50, alpha: 0.6 });
     modal.addChild(bg);
 
-    // 装饰顶部色条
+    // 顶部色条
     const bar = new PIXI.Graphics();
-    bar.roundRect(x + 20, y + 20, mw - 40, 4, 2);
-    bar.fill({ color: 0xe74c3c });
+    bar.roundRect(mx + 16, my + 14, mw - 32, 4, 2);
+    bar.fill({ color: 0xf1c40f });
     modal.addChild(bar);
 
     // 标题
-    const titleText = new PIXI.Text({
+    const titleT = new PIXI.Text({
       text: title,
-      style: { fontFamily: 'PingFang SC, sans-serif', fontSize: 22, fill: 0x2c3e50, fontWeight: 'bold' }
+      style: {
+        fontFamily: 'PingFang SC, Microsoft YaHei, sans-serif',
+        fontSize:   24,
+        fontWeight: 'bold',
+        fill:       0xf1c40f,
+        dropShadow: { color: 0x000000, blur: 4, distance: 2, alpha: 0.6 },
+      },
     });
-    titleText.anchor.set(0.5);
-    titleText.x = this.W / 2;
-    titleText.y = y + 50;
-    modal.addChild(titleText);
+    titleT.anchor.set(0.5);
+    titleT.x = this.W / 2;
+    titleT.y = my + 46;
+    modal.addChild(titleT);
 
-    // 内容
-    let ly = y + 85;
+    // 内容行
+    let ly = my + 82;
     for (const line of lines) {
       const t = new PIXI.Text({
         text: line,
-        style: { fontFamily: 'PingFang SC, sans-serif', fontSize: 14, fill: 0x555555 }
+        style: {
+          fontFamily: 'PingFang SC, Microsoft YaHei, sans-serif',
+          fontSize:   15,
+          fill:       0xddeedd,
+        },
       });
       t.anchor.set(0.5);
       t.x = this.W / 2;
       t.y = ly;
       modal.addChild(t);
-      ly += 28;
+      ly += 30;
     }
 
     // 按钮
-    const btnW = 100, btnH = 38;
+    const btnY = my + mh - 56;
+    const btnW = 120, btnH = 40;
     const btnBg = new PIXI.Graphics();
-    btnBg.roundRect(this.W / 2 - btnW / 2, y + mh - 65, btnW, btnH, 10);
-    btnBg.fill({ color: 0xe74c3c });
-
-    const btnHl = new PIXI.Graphics();
-    btnHl.roundRect(this.W / 2 - btnW / 2 + 2, y + mh - 63, btnW - 4, btnH / 2 - 2, 8);
-    btnHl.fill({ color: 0xffffff, alpha: 0.15 });
+    btnBg.roundRect(this.W / 2 - btnW / 2, btnY, btnW, btnH, 12);
+    btnBg.fill({ color: 0xf1c40f });
 
     const btnText = new PIXI.Text({
       text: buttonText,
-      style: { fontFamily: 'PingFang SC, sans-serif', fontSize: 15, fill: 0xffffff, fontWeight: 'bold' }
+      style: {
+        fontFamily: 'PingFang SC, Microsoft YaHei, sans-serif',
+        fontSize:   16,
+        fontWeight: 'bold',
+        fill:       0x1a3a1a,
+      },
     });
     btnText.anchor.set(0.5);
     btnText.x = this.W / 2;
-    btnText.y = y + mh - 46;
+    btnText.y = btnY + btnH / 2;
 
     modal.addChild(btnBg);
-    modal.addChild(btnHl);
     modal.addChild(btnText);
-
     btnBg.eventMode = 'static';
-    btnBg.cursor = 'pointer';
-    btnBg.on('pointerdown', () => {
-      this.hideModal();
-      if (onButton) onButton();
-    });
+    btnBg.cursor    = 'pointer';
+    btnBg.on('pointerdown', () => { this.hideModal(); if (onButton) onButton(); });
+    btnBg.on('pointerover',  () => { btnBg.scale.set(1.04); });
+    btnBg.on('pointerout',   () => { btnBg.scale.set(1); });
 
     this.layers.modal.addChild(modal);
-
-    // 淡入动画
     modal.alpha = 0;
-    Anim.tween(modal, { alpha: 1 }, 200);
+    Anim.tween(modal, { alpha: 1 }, 220);
   }
 
   hideModal() {
-    const modal = this.layers.modal.getChildByName('modal');
-    if (modal) {
-      this.layers.modal.removeChild(modal);
-      modal.destroy({ children: true });
-    }
+    const m = this.layers.modal.getChildByName('modal');
+    if (m) { this.layers.modal.removeChild(m); m.destroy({ children: true }); }
   }
 
-  // ===== 当前玩家高亮指示 =====
+  // ===== 当前玩家高亮 =====
   highlightPlayer(playerIdx) {
     for (let i = 0; i < 4; i++) {
       const label = this._seatLabels[i];
       if (!label) continue;
-      if (i === playerIdx) {
-        label.style.fill = 0xf1c40f;
-        label.style.fontWeight = 'bold';
-      } else {
-        label.style.fill = 0x7f8c8d;
-        label.style.fontWeight = 'normal';
-      }
+      label.style.fill       = (i === playerIdx) ? 0xf1c40f : 0xd4e8d4;
+      label.style.fontWeight = (i === playerIdx) ? 'bold'   : 'normal';
     }
   }
 
-  // ===== 清理 =====
+  // ===== 清理牌面 =====
   cleanTiles() {
-    const keys = ['hand_0', 'hand_1', 'hand_2', 'hand_3',
-                  'melons_0', 'melons_1', 'melons_2', 'melons_3'];
+    const keys = ['hand_0','hand_1','hand_2','hand_3',
+                  'melons_0','melons_1','melons_2','melons_3'];
     for (const k of keys) {
       const c = this.layers.tiles.getChildByName(k);
       if (c) { this.layers.tiles.removeChild(c); c.destroy({ children: true }); }

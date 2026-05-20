@@ -1,0 +1,27 @@
+{
+  "name": "changsha_mahjong",
+  "version": "1.0.0",
+  "description": "> 纯前端 JavaScript 实现的长沙红中麻将，单 HTML 文件，无后端依赖。 > PixiJS 8 渲染 + 完整算法层 + AI 对手 + 动态难度。",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nexe-afk/changsha_mahjong.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/nexe-afk/changsha_mahjong/issues"
+  },
+  "homepage": "https://github.com/nexe-afk/changsha_mahjong#readme",
+  "dependencies": {
+    "playwright": "^1.60.0"
+  }
+}

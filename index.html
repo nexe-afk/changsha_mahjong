@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>长沙红中麻将 🀄</title>
+  <title>长沙红中麻将</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      background: #0d1f0d;
+      background: #0d1a0d;
       overflow: hidden;
       display: flex;
       justify-content: center;
@@ -18,22 +18,42 @@
     #game-canvas { display: block; }
     #loading {
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
+      inset: 0;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       color: #f1c40f;
-      font-size: 24px;
-      background: #0d1f0d;
+      font-size: 22px;
+      background: #0d1a0d;
       z-index: 100;
+      gap: 18px;
+    }
+    #loading-bar-wrap {
+      width: 220px; height: 8px;
+      background: #1a3a1a;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    #loading-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #4caf50, #f1c40f);
+      border-radius: 4px;
+      transition: width 0.15s;
     }
   </style>
 </head>
 <body>
-  <div id="loading">🀄 加载中...</div>
+  <div id="loading">
+    <div>🀄 长沙红中麻将</div>
+    <div id="loading-bar-wrap"><div id="loading-bar"></div></div>
+    <div id="loading-tip" style="font-size:14px;color:#7fbf7f;">加载资源中...</div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/pixi.js@8.1.0/dist/pixi.min.js"></script>
 
-  <!-- 核心逻辑（纯算法） -->
+  <!-- 核心逻辑 -->
   <script src="js/core.js"></script>
   <script src="js/hu.js"></script>
   <script src="js/rule.js"></script>
@@ -41,7 +61,7 @@
   <script src="js/difficulty.js"></script>
   <script src="js/ai_logger.js"></script>
 
-  <!-- 引擎层：按依赖顺序加载 -->
+  <!-- 引擎层 -->
   <script src="engine/sound.js"></script>
   <script src="engine/tile.js"></script>
   <script src="engine/animation.js"></script>
@@ -55,34 +75,64 @@
   <script src="js/tutorial.js"></script>
 
   <script>
-    document.getElementById('loading').textContent = '🎮 启动中...';
     window.addEventListener('load', async () => {
+      // ===== PixiJS 初始化（1280×720 适配桌面图片比例）=====
       const app = new PIXI.Application();
       await app.init({
-        width: 1200,
-        height: 800,
-        backgroundColor: 0x0d1f0d,
-        antialias: true,
-        resolution: window.devicePixelRatio || 1,
-        autoDensity: true,
+        width:           1280,
+        height:          720,
+        backgroundColor: 0x0d1a0d,
+        antialias:       true,
+        resolution:      window.devicePixelRatio || 1,
+        autoDensity:     true,
       });
-      document.getElementById('game-canvas')?.remove();
-      document.getElementById('loading')?.remove();
-      const canvas = app.canvas;
-      canvas.id = 'game-canvas';
-      document.body.appendChild(canvas);
 
-      const engine = new GameEngine(app);
-      engine.init();
-      engine.start();
+      // ===== 预加载所有资源 =====
+      const bar = document.getElementById('loading-bar');
+      const tip = document.getElementById('loading-tip');
 
-      // 初始化动态难度
-      if (typeof DDAManager !== 'undefined') DDAManager.init();
+      const assets = [
+        // 桌面背景
+        'assets/ui/table.png',
+        // 牌背面
+        'assets/cardBack/bm.png',
+        // 操作按钮
+        'assets/operate/option_hu.png',
+        'assets/operate/option_peng.png',
+        'assets/operate/option_gang.png',
+        'assets/operate/option_guo.png',
+        // 玩家手牌（条/筒/万 各9张）
+        ...['b','t','w'].flatMap(s => Array.from({length:9},(_,i)=>`assets/myCard/${s}${i+1}.png`)),
+        // 头像
+        'assets/avatar/avatar.png',
+        'assets/avatar/avatar2.png',
+        'assets/avatar/avatar3.png',
+        'assets/avatar/avatar4.png',
+      ];
 
-      // 首次启动引导
-      if (typeof TutorialManager !== 'undefined') {
-        setTimeout(() => TutorialManager.maybeStart(), 800);
-      }
+      let loaded = 0;
+      PIXI.Assets.load(assets, (progress) => {
+        bar.style.width = `${Math.round(progress * 100)}%`;
+        tip.textContent = `加载资源中… ${Math.round(progress * 100)}%`;
+      }).then(() => {
+        // 移除加载界面，挂载画布
+        document.getElementById('loading')?.remove();
+        const canvas = app.canvas;
+        canvas.id = 'game-canvas';
+        document.body.appendChild(canvas);
+
+        // 启动游戏
+        const engine = new GameEngine(app);
+        engine.init();
+        engine.start();
+
+        // 背景音乐（用户交互后自动播放）
+        document.addEventListener('pointerdown', () => sound.startBGM(), { once: true });
+
+        if (typeof DDAManager   !== 'undefined') DDAManager.init();
+        if (typeof TutorialManager !== 'undefined')
+          setTimeout(() => TutorialManager.maybeStart(), 800);
+      });
     });
   </script>
 </body>
