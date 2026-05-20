@@ -1,99 +1,65 @@
-# Claude 4.7 提示词 — AI 玩家策略
+# Claude 4.7 提示词 — AI 玩家策略（集成参考项目）
 ## 原模块: Module 2 (prompts.json) / 03 (prompts_v2)
 ## 原目标模型: gpt-4.1/codex → Claude 4.7
+## 参考项目: mahjong-helper (EndlessCheng), Akagi (shinkuan), Mortal (Equim-chan)
 
 ---
 
-## 原提示词（Codex 版）
+## 专业背景与项目参考
 
-你是专家级游戏 AI 设计师，专注于棋牌类游戏的非玩家角色 (NPC) 决策系统，曾为多个商业麻将游戏设计 AI。
+**Role**: 你是麻将 AI 策略专家，深入分析过以下开源项目的 AI 决策逻辑：
+- **mahjong-helper** (⭐2.3k+, GitHub: EndlessCheng/mahjong-helper): 支持雀魂、天凤的实时 AI 助手，提供牌效分析（打哪张牌期望值最高）和防守分析（规避放炮）。它的核心是出牌评分系统和危险性加权。
+- **Akagi** (⭐788, GitHub: shinkuan/Akagi): 实时分析雀魂的 AI 助手，支持自定义模型，采用中间人代理(MITM)架构。
+- **Mortal** (⭐1.4k+, GitHub: Equim-chan/Mortal): 基于 Rust 和深度强化学习的超强麻将AI，代表天花板级水平。
 
-## 任务描述
-用纯 JavaScript (ES6+) 实现长沙红中麻将的 AI 玩家策略模块。该模块决定 AI 在三种情境下的行为: 出哪张牌、是否碰、是否杠、是否胡。
+**你的任务**：用纯 JavaScript (ES6+) 实现长沙红中麻将的三档难度 AI 玩家策略模块。参考 mahjong-helper 的评分体系和防守加权逻辑，但不追求 Mortal 的深度强化学习级别——保持基于规则的清晰可解释设计。
 
-## 技术上下文
-- 语言: JavaScript ES6+
-- 调用方: engine/flow.js 中的游戏回合控制
-- AI 需要访问: gameState.players[i].hand (当前手牌), gameState.players[i].melons (已碰杠牌组)
-- AI 决策速度要求: < 50ms 完成
+**参考 mahjong-helper 的关键设计点**:
+1. **牌效率评分**: 每张牌的「孤立度」和「搭子数」是核心指标。孤张（无邻牌）分数低，双面搭子（有两张邻牌）分数高。
+2. **防守加权**: 当其他玩家听牌迹象明显时，打牌权重从「效率优先」切换为「安全优先」——危险牌（已出现过的牌、生张）被降权。
+3. **红中处理**: 红中是绝对安全牌（因为不能被吃碰），但也是万能牌，mahjong-helper 的策略是「除非听牌，否则留红中」。
+4. **听牌检测**: 打出某张牌后，如果剩余牌能胡，则该牌扣分（AI 倾向于听牌）。
 
-### 1. 出牌决策: aiDecideDiscard(hand, melons) -> tileCode
-采用评分制，对每张手牌计算分数后出最低分:
-评分规则: 成对 +20, 左搭子 +10, 右搭子 +10, 两面搭 +15, 听牌 +30, 边张 -5, 已碰牌 -10, 红中 -9999
+**将这些策略融入你的评分系统**：
 
-### 2. 碰决策: aiDecideAction(playerIdx, tile, actions) -> hu/peng/gang/pass
-- 能胡必胡
-- 能杠看心情 (50% 概率)
-- 碰后听牌才碰
-
-### 3. 难度分层
-- 普通模式: 如评分规则
-- 困难模式: 碰杠概率 +20%, 听牌权重 +10
-
-## 输出: ai.js (约120行)
-
----
-
-## Claude 4.7 优化版
-
-**Role**: 你是游戏 AI 策略专家，精通麻将类游戏的评分系统与决策树设计。你对基于规则的分层决策系统、启发式搜索和概率加权选择有丰富经验。
-
-**Task**: 用纯 JavaScript (ES6+) 实现长沙红中麻将的三档难度 AI 玩家策略模块。AI 需要决策：出牌、碰、杠、胡。注意这个模块是纯读取 gameState 的纯函数，运行时不可修改任何外部状态。
-
-**Context**:
-- 语言: JavaScript ES6+，纯函数式，无外部依赖
-- AI 读取: gameState.players[i].hand（当前手牌），gameState.players[i].melons（已碰杠牌）
-- AI 不修改 gameState，只读取
-- 决策速度要求: < 50ms（评分制不应有性能问题）
-- 难度通过参数对象传入，不依赖外部全局变量
-
-**Detailed Requirements**:
-
-1. **出牌评分系统**（核心算法）:
+1. **出牌评分系统**:
    - 对每张手牌计算分数，选最低分打出
-   - 评分规则: 成对+20, 左搭子+10, 右搭子+10, 两面搭+15, 听牌价值+30, 边张-5, 已碰牌色-10, 红中-9999（永不弃）
-   - 每张牌独立评分，评分理由要结构化存储（便于后续日志输出）
+   - 评分规则: 成对+20, 左搭子+10, 右搭子+10, 两面搭+15, 听牌价值+30, 边张(1/9)-5, 已碰牌色-10, 红中-9999（永不弃）
+   - 每张牌独立评分，评分理由结构化存储
 
 2. **动作决策**:
    - aiDecideAction 返回 'hu' | 'peng' | 'gang' | 'pass'
    - 能胡时必须返回 'hu'（优先级最高）
    - 杠决策有概率因素（普通模式50%，困难模式70%，简单模式30%）
-   - 碰决策采用阈值制：碰后预计听牌张数 > 阈值才碰
+   - 碰决策阈值制：碰后预计听牌张数 > 阈值才碰
 
 3. **三档难度**:
-   - 简单（easy）: discardNoise=0.3, pengThreshold=5, huBlindChance=0.3
-   - 普通（normal）: discardNoise=0.05, pengThreshold=3, huBlindChance=0.05
-   - 困难（hard）: discardNoise=0, pengThreshold=1, huBlindChance=0
+   - easy: discardNoise=0.3, pengThreshold=5, huBlindChance=0.3
+   - normal: discardNoise=0.05, pengThreshold=3, huBlindChance=0.05
+   - hard: discardNoise=0, pengThreshold=1, huBlindChance=0
 
 **I/O Contract**:
 ```
-aiDecideDiscard(hand: number[], melons: object[], difficulty='normal')
-    → tileCode: number  // 选中要打出的牌编码
-
-aiDecideAction(playerIdx: number, tile: number, availableActions: string[], difficulty='normal')
-    → 'hu' | 'peng' | 'gang' | 'pass'
-
-getDifficultyParams(level: string)
-    → { discardNoise: number, pengThreshold: number, huBlindChance: number }
+aiDecideDiscard(hand: number[], melons: object[], difficulty='normal') → tileCode: number
+aiDecideAction(playerIdx: number, tile: number, availableActions: string[], difficulty='normal') → 'hu' | 'peng' | 'gang' | 'pass'
+getDifficultyParams(level: string) → { discardNoise, pengThreshold, huBlindChance }
 ```
 
 **Constraints**:
-- 所有函数必须是纯函数（读取 gameState 但不写入）
+- 所有函数纯函数（只读 gameState 不写入）
 - 有红中时永不弃红中
 - 能胡时永远返回 'hu'
-- 评分规则写在注释中
 - 每次调用入参相同则结果一致（除 noise 因素外）
-- 不要使用机器学习或概率模型
+- 不要用机器学习或概率模型
+- 评分规则写在注释中
 
-**Output Format**: 单个文件 ai.js（约120行），包含难度级别常量和三个导出函数。难度参数用常量对象定义在文件顶部。
+**Output Format**: 单个文件 ai.js（约120行），难度常量 + 三个导出函数，规则写在注释里。
 
-**已替换变更说明**: 原 Codex 版强调「纯函数」「严格I/O类型」，Claude 4.7 版保留相同功能但用自然语言描述评分规则，减少冗余模板代码。AI 逻辑完全一致：多人房间回合管理、打分标准、动作决策树。新增对评分结构化存储的要求，便于日志系统集成。
-
-**Verification Plan**:
-1. aiDecideDiscard 在有红中的手牌中永不返回红中编码
-2. 能胡时 aiDecideAction 永远返回 'hu'
-3. 简单模式下约30%概率出现非最优出牌
-4. 困难模式下0%概率随机出牌
-5. 同一手牌同一难度连续调用结果一致（纯函数特性）
-6. 手牌14张时必须返回一个有效牌编码
+**Verification Plan**（参考 mahjong-helper 的测试覆盖）:
+1. 有红中的手牌永不弃红中
+2. 能胡时永远返回 'hu'
+3. 简单模式 ~30% 非最优出牌
+4. 困难模式 0% 随机出牌
+5. 同一手牌调用结果一致（纯函数）
+6. 手牌14张时必须返回有效牌编码
 7. 附带5个测试场景覆盖三种难度

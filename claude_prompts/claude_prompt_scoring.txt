@@ -1,73 +1,25 @@
-# Claude 4.7 提示词 — 奖励与计分系统
+# Claude 4.7 提示词 — 奖励与计分系统（集成参考项目）
 ## 原模块: Module 3 (prompts.json) / 05 (prompts_v2)
-## 原目标模型: gpt-4.1/codex → Claude 4.7
+## 参考项目: q_algorithm, majiang(Laya), nanoserver
 
 ---
 
-## 原提示词（Codex 版）关键内容
+## 专业背景与项目参考
 
-- 胡牌类型检测: 平胡x1, 七小对x2, 碰碰胡x2, 清一色x4, 天胡x8
-- 牌型叠加时基数相乘，再乘以扎鸟倍数
-- 扎鸟: 红中/1/5/9→true, 每中1鸟x2, 中N鸟=2^N
-- 单局最高得分封顶1024分
+**Role**: 你是麻将计分系统专家，考察过 q_algorithm 的牌型枚举逻辑和 nanoserver 的生产级计分方案。q_algorithm 的胡牌类型检测（getHuInfo）对你的 reference 价值最大——它用一组固定的模式模板（pattern = [刻子, 顺子, 将眼]）逐层匹配，而非自由回溯。
 
-输出: rule.js (~100行) + 8个断言测试用例
+**参考 q_algorithm 的计分设计思路**:
+1. **模式匹配而非回溯**: q_algorithm 的胡牌类型检测是「先拆解再匹配」——先把手牌按牌型拆解为面子组，再逐个匹配胡牌类型模板。这比在回溯过程中同时做类型判断更快。
+2. **倍数叠加**: 每种胡牌类型是一个「倍数因子」，叠加时相乘。q_algorithm 把「胡牌类型」和「算倍数」完全分离，保持代码清晰。
+3. **扎鸟独立性**: 扎鸟倍数作为独立因子，最后乘入。这种设计在长沙麻将中特别合理——因为扎鸟基于发牌结果而非玩家手牌。
 
-## Claude 4.7 优化版
-
-**Role**: 你是游戏数值策划师与赌台规则专家，精通麻将类游戏的得分模型、奖励曲线和牌型组合的数学倍数关系。
-
-**Task**: 用纯 JavaScript (ES6+) 实现长沙红中麻将的完整奖励与经济计分系统。核心输出为 rule.js 文件，包含胡牌类型检测、倍数计算和扎鸟判定逻辑。
-
-**Context**:
-- 语言: JavaScript ES6+
-- 接入接口: canWin(hand, zhong) 来自 hu.js
-- 计分公式: 最终得分 = 牌型基数 × 扎鸟倍数
-- 牌型可叠加，叠加时基数相乘
-- 单局最高得分封顶: Math.min(finalScore, 1024)
+**采用同样的分离设计**：将胡牌类型检测、倍数计算、扎鸟判定写成三个独立模块。
 
 **Detailed Requirements**:
 
-1. **胡牌类型检测**:
-   - pinghu（平胡x1）: 标准胡，N面子+1将眼
-   - qixiaodui（七小对x2）: 7个对子
-   - pengpenghu（碰碰胡x2）: 全刻子+将眼
-   - qingyise（清一色x4）: 单一花色+红中
-   - tianhu（天胡x8）: 发牌即胡
-   - 返回 string[]，如 ['qingyise', 'qixiaodui']
+1. **胡牌类型检测**: getHuType(hand, melons)→string[]，返回 pinghu(×1)/qixiaodui(×2)/pengpenghu(×2)/qingyise(×4)/tianhu(×8)
+2. **倍数计算**: calcMultiplier(types, birds)→number，叠加基数相乘×扎鸟倍数
+3. **扎鸟判定**: isBirdHit(tile)→boolean，红中或1/5/9→true；中N鸟=2^N
+4. **封顶**: 单局最高1024分
 
-2. **倍数计算**:
-   - calcMultiplier: 牌型基数相乘×扎鸟倍数
-   - 示例: 清一色七小对 = 4×2 = x8
-   - 示例: 天胡中3鸟 = 8×(2^3) = x64
-
-3. **扎鸟判定**:
-   - isBirdHit(tile): 红中或1/5/9→true
-   - 胡牌后翻4张牌，每中1鸟×2
-   - 中N鸟=2^N倍
-
-**I/O Contract**:
-```
-getHuType(hand: number[], melons: object[]) → string[]
-calcMultiplier(huTypes: string[], birdMultiplier: number) → number
-isBirdHit(tile: number) → boolean
-calculateScore(hand: number[], melons: object[], birds: number[]) → number  // 封顶1024
-```
-
-**Constraints**:
-- 与 core.js 和 hu.js 的接口保持一致
-- 最终结果取整（Math.floor）
-- 所有计分逻辑每条有中文注释说明
-- 封顶后明确输出 Math.min(final, 1024)
-
-**Output Format**: 完整 rule.js 文件（约100行），包含所有计分常量和函数，附带8个断言测试用例。
-
-**Verification Plan**:
-1. calcMultiplier(['pinghu'], 1) → 1
-2. calcMultiplier(['qingyise','qixiaodui'], 1) → 8
-3. calcMultiplier(['tianhu'], 8) → 64
-4. calculateScore(..., 中4鸟) → ≤1024
-5. isBirdHit(40) → true（红中）
-6. isBirdHit(1) → true（条1）
-7. isBirdHit(2) → false
-8. isBirdHit(15) → true（筒5）
+**Output Format**: rule.js（约100行），3大函数+常量+8个测试用例。

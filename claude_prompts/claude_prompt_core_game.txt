@@ -1,73 +1,20 @@
-# Claude 4.7 提示词 — 麻将核心游戏逻辑
+# Claude 4.7 提示词 — 麻将核心游戏逻辑（集成参考项目）
 ## 原模块: Module 1 (prompts.json) / 02 (prompts_v2)
 ## 原目标模型: gpt-4.1/codex → Claude 4.7
+## 参考项目: q_algorithm (yuanfengyun), mjx, majiang (Laya)
 
 ---
 
-## 原提示词（Codex 版）
+## 专业背景与项目参考
 
-你是拥有 10 年以上游戏开发经验的资深工程师，专精于麻将类游戏的算法实现。
+**Role**: 你是资深麻将算法工程师，专注考察过以下开源项目的核心实现：
+- **q_algorithm** (⭐2k+, GitHub: yuanfengyun/q_algorithm): 高性能胡牌/听牌判断库，支持任意数量赖子（万能牌），有 JavaScript 绑定。它的核心是 `canWin(hand)` 和 `ting(hand)` 两个函数，采用高效的组合枚举算法。
+- **mjx** (nyantama0616/mjx): 高性能日麻框架，速度比常规实现快100倍，适合研究极致性能优化。
+- **majiang (Laya版本)** (⭐596, GitCode): 基于 Laya3.x 引擎的完整联网麻将项目，包含完整的 core.js 规则实现。
 
-## 任务描述
-用纯 JavaScript (ES6+) 实现长沙红中麻将的核心游戏逻辑模块。运行环境为浏览器前端，无服务器端依赖。
+**你的任务**：实现长沙红中麻将的核心游戏逻辑，但**不需要从零造轮子**。algorithms 参考 q_algorithm 的编码风格和判胡逻辑，架构参考 majiang (Laya) 的项目结构。
 
-## 技术上下文
-- 语言: JavaScript ES6+
-- 引擎: 无 (纯算法模块，将被 PixiJS 引擎调用)
-- 牌型: 112 张牌 (条 1-9 x4, 筒 1-9 x4, 万 1-9 x4, 红中 x4)
-- 编码: suit*10 + value (条=0, 筒=1, 万=2), 红中=40
-- 调用方: 引擎层通过 gameState 对象与算法层通信
-
-## 需要实现的核心功能
-
-### 1. 牌定义与牌墙 (core.js)
-- encodeTile(suit, value) -> 编码
-- decodeTile(code) -> { suit, value, name }
-- createWall() -> 生成 112 张无序牌
-- shuffle(wall) -> Fisher-Yates 洗牌
-- deal(wall) -> [hand0, hand1, hand2, hand3] 每人 13 张
-- 工具函数: countInHand() / getCountMap() / removeTiles() / sortHand() / findPairs()
-- 全局游戏状态 gameState 对象
-
-### 2. 胡牌判定 (hu.js) - 这是最核心的算法
-- canWin(hand, zhong) -> boolean
-  - 优先检测七小对: 7 个对子 (红中可替代)
-  - 标准胡回溯法: N 个面子 (刻子/顺子) + 1 个将眼
-  - 红中万能牌在回溯过程中自动匹配 (刻子 AA+H->AAA, 顺子 A+H+C->ABC)
-  - 限制递归深度，避免栈溢出
-- getTingCards(hand) -> [可胡牌列表]
-- checkQueYiSe(hand) -> boolean (胡牌时不能三门全有)
-- drawBirds(wall, count) -> { birds, multiplier } (扎鸟: 翻 4 张，中 1/5/9/红中 = x2^N)
-
-### 3. 输入输出约定
-- canWin([牌编码数组], 红中数量) -> true/false
-- getTingCards([牌编码数组]) -> [牌编码]
-- drawBirds([牌墙], 数量) -> { birds:[牌编码], multiplier:number }
-
-## 工程约束
-- 每个函数头部必须有中文注释说明用途和参数
-- 禁止使用任何第三方库或框架
-- 禁止访问 DOM 或任何浏览器 API (纯算法)
-- 禁止全局变量污染 (gameState 除外)
-- 所有排序默认升序 (a, b) -> a - b
-- 输出完整代码，不允许出现 TODO 或省略号
-
-## 验证规范
-- 标准胡: 3 个顺子 + 1 个对子 -> true
-- 七小对: 7 个对子 -> true
-- 红中万能: 1 个红中 + 缺 1 张 -> true
-- 不能胡的牌型 -> false
-- 空手牌 -> false
-- 全部红中 -> true
-- 输出代码后附 10 个以上的断言测试用例
-
----
-
-## Claude 4.7 优化版
-
-**Role**: 你是资深游戏算法工程师，专精于麻将规则引擎与组合优化算法。你对递归回溯、状态空间搜索和约束满足问题有深入理解。
-
-**Task**: 用纯 JavaScript (ES6+) 实现长沙红中麻将的完整核心游戏逻辑。运行环境为纯浏览器端前端算法模块，无服务端依赖。需要生成三个文件：core.js（牌定义与牌墙管理）、hu.js（胡牌判定与听牌检测）、rule.js（胡牌类型与倍数计算）。
+**Task**: 用纯 JavaScript (ES6+) 实现长沙红中麻将的完整核心游戏逻辑。运行环境为纯浏览器端前端算法模块，无服务端依赖。生成 core.js（牌定义与牌墙管理）、hu.js（胡牌判定与听牌检测）、rule.js（胡牌类型与倍数计算）三个文件。
 
 **Context**:
 - 语言: JavaScript ES6+（纯算法，无 DOM 依赖）
@@ -77,27 +24,41 @@
 - 调用接口: 引擎层通过 gameState 对象与算法层通信
 - 核心要求: 纯函数式，不可变输入，不修改外部状态
 
+**参考 q_algorithm 的关键设计点**:
+1. 使用位运算编码牌型（q_algorithm 用 uint64 表示手牌，一个 bit 表示一张牌）
+2. 胡牌检测先用牌型模式匹配（七小对→刻子顺子），而非纯回溯
+3. 赖子（红中）在匹配时做「通配符展开」，q_algorithm 的处理是：先算基础胡，再把张数足够的牌型做赖子替换再计算
+4. 听牌检测基于「输⼊一张牌看能否胡」的插⼊法
+
+**不需要完全照搬 q_algorithm 的位运算**（JS 环境中可读性更重要），但要理解其「先匹配后枚举」的优化思路，并在你的回溯法中嵌入同样的优化：
+- 先检查七小对（O(n) 即可判定）
+- 再执行标准胡回溯：N个面子（刻子/顺子）+ 1个将眼
+- 红中万能：在回溯中尝试替代任何牌
+  - AA + H → AAA（刻子）
+  - A + H + C → ABC（顺子）
+  - A + B + H → ABC（顺子）
+- 递归深度 ≤ 5 层
+
 **Detailed Requirements**:
 
 1. **牌定义与牌墙管理** (core.js):
-   - 实现牌编码/解码: encodeTile(suit, value)→number, decodeTile(code)→{suit,value,name}
-   - 生成112张牌墙: createWall()→number[]
-   - Fisher-Yates洗牌: shuffle(arr)→number[]
-   - 发牌: deal(wall)→[hand0,hand1,hand2,hand3] 每人13张
-   - 工具函数: countInHand, getCountMap, removeTiles, sortHand, findPairs
-   - 全局 gameState 对象管理
+   - encodeTile(suit, value)→number / decodeTile(code)→{suit,value,name}
+   - createWall()→number[]（112张）
+   - Fisher-Yates shuffle→number[]
+   - deal(wall)→[hand0,hand1,hand2,hand3] 每人13张
+   - 工具: countInHand, getCountMap, removeTiles, sortHand, findPairs
+   - 全局 gameState 对象
 
-2. **胡牌判定算法** (hu.js) — 绝对核心：
-   - canWin(hand, zhong)→boolean: 优先检测七小对（7对子，红中可替代缺对），再执行标准胡回溯（N面子+1将眼）
-   - 红中万能处理: AA+H→AAA, A+H+C→ABC, A+B+H→ABC，递归深度≤5层
-   - getTingCards(hand)→number[]: 返回所有可胡牌列表
+2. **胡牌判定算法** (hu.js) — 参考 q_algorithm 的设计：
+   - canWin(hand, zhong)→boolean: 先七小对→标准胡回溯，红中当万能牌
+   - getTingCards(hand)→number[]: 遍历剩余牌库，逐张插入后调用 canWin
    - checkQueYiSe(hand)→boolean: 最多两门花色
-   - drawBirds(wall, count)→{birds, multiplier}: 扎鸟，中1/5/9/红中=x2^N
+   - drawBirds(wall, count)→{birds, multiplier}: 扎鸟翻4张，中1/5/9/红中=2^N
 
 3. **规则判定** (rule.js):
-   - getHuType(hand, melons)→string[]: 检测平胡/七小对/碰碰胡/清一色/天胡
+   - getHuType(hand, melons)→string[]: 平胡/七小对/碰碰胡/清一色/天胡
    - calcMultiplier(types, birds)→number: 牌型叠加基数相乘×扎鸟倍数
-   - 单局最高得分封顶1024分
+   - 单局最高封顶 1024 分
 
 **I/O Contract**:
 ```
@@ -111,21 +72,21 @@ calcMultiplier(huTypes: string[], birdMultiplier: number) → number
 **Constraints**:
 - 纯函数式设计，不修改输入数组
 - 每个函数头部有中文注释（功能/参数/返回值说明）
-- 禁止第三方库和浏览器API
-- 禁止全局变量污染（gameState除外）
-- 递归深度≤5层防栈溢出
-- 完整代码输出，无TODO或省略号
+- 禁止第三方库和浏览器 API
+- 禁止全局变量污染（gameState 除外）
+- 递归深度 ≤ 5 层防栈溢出
+- 完整代码输出，无 TODO 或省略号
 
-**Output Format**: 三个文件 core.js（~150行） + hu.js（~200行） + rule.js（~120行），每函数均有中文文档注释。
+**Output Format**: 三个文件 core.js（~150行）+ hu.js（~200行）+ rule.js（~120行），每函数均有中文文档注释。
 
-**Verification Plan**:
-1. canWin([2,2,3,3,3,4,4,4,5,5,5,6,6])→true（标准顺子+刻子+将）
+**Verification Plan**（参考 q_algorithm 的测试覆盖范围）:
+1. canWin([2,2,3,3,3,4,4,4,5,5,5,6,6])→true（标准胡）
 2. canWin([1,1,2,2,3,3,4,4,5,5,6,6,7,7])→true（七小对）
 3. canWin([1,1,2,2,3,3,4,4,5,5,6,6,40])→true（红中替代一对）
-4. canWin([40,40,40,40])→true（全红中）
+4. canWin([40,40,40,40])→true（全红中万能）
 5. canWin([1,2,3,4,5,6,7,8,9,1,1])→false（缺将眼）
 6. getTingCards([1,2,3,4,5,6,7,8,9,1,2]) 包含 3
-7. getHuType(...) 正确检测 qingyise + qixiaodui 组合
+7. getHuType 正确检测叠加牌型（如清一色七小对）
 8. calcMultiplier(['tianhu'], 8)→64
-9. 附带15+断言测试用例，覆盖全部边界情况
-10. drawBirds 中40→true, 1→true, 2→false
+9. 附带 15+ 断言测试用例，覆盖 q_algorithm 的典型测试集
+10. drawBirds: 40→true, 1→true, 2→false
