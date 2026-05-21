@@ -1,3 +1,26 @@
-node_modules/
+# macOS
+._*
 .DS_Store
-*.log
+*~
+.swp
+
+# Flutter/Dart
+client/.dart_tool/
+client/.packages
+client/build/
+client/.flutter-plugins
+client/.flutter-plugins-dependencies
+client/pubspec.lock
+*.iml
+.idea/
+
+# Node
+server/node_modules/
+server/dist/
+npm-debug.log*
+
+# Docker
+.env
+
+# IDE
+.vscode/
