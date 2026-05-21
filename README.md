@@ -38,6 +38,12 @@
 - **3D 麻将牌组件**：渐变牌面、中文数字标识、花色配色
 - **Google Fonts**：思源宋体（标题）+ 思源黑体（正文）
 
+<p align="center">
+  <img src="./assets/demo/开屏动画.gif" width="240" alt="开屏动画"/>
+  <img src="./assets/demo/可选游客登入.gif" width="240" alt="游客登入"/>
+</p>
+<p align="center"><em>开屏动画 · 游客登录</em></p>
+
 ### 🀄 长沙麻将规则完整实现
 
 | 功能 | 说明 |
@@ -52,11 +58,24 @@
 | 海底捞月 | 墙牌只剩一张时摸牌胡牌 |
 | 再来一局 | 自动重新加入 AI 对局 |
 
+<p align="center">
+  <img src="./assets/demo/摇号定庄.gif" width="240" alt="摇号定庄"/>
+  <img src="./assets/demo/吃牌效果.gif" width="240" alt="吃牌"/>
+  <img src="./assets/demo/碰牌效果.gif" width="240" alt="碰牌"/>
+  <img src="./assets/demo/杠牌效果.gif" width="240" alt="杠牌"/>
+</p>
+<p align="center"><em>定庄摇号 · 吃牌 · 碰牌 · 杠牌</em></p>
+
 ### 🤖 AI 系统
 - **三个 AI 对手**：自动加入对局、智能决策
 - **AI 出牌算法**：基于牌价值评估的选牌策略
 - **AI 动作决策**：吃/碰/杠/胡自动选择（带随机扰动）
 - **托管模式**：玩家可开启自动托管，AI 代打
+
+<p align="center">
+  <img src="./assets/demo/ai托管演示.gif" width="240" alt="AI托管"/>
+</p>
+<p align="center"><em>AI 托管演示</em></p>
 
 ### ✨ 动画与特效
 - **定庄摇号**：四个座位循环高亮，减速定格庄家
