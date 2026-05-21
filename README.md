@@ -1,7 +1,7 @@
 # 长沙麻将网络版 — v2.0
 
 <p align="center">
-  <img src="wys签名.gif" alt="作者签名" width="200"/>
+  <img src="./assets/wys_signature.gif" alt="作者签名" width="400"/>
 </p>
 
 <p align="center">
