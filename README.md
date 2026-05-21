@@ -207,5 +207,11 @@ adb install -r build/app/outputs/flutter-apk/app-debug.apk
 
 ---
 
-*项目地址：https://github.com/nexe-afk/changsha_mahjong*
-*版本：2.0.0 | 2026-05-21*
+<p align="center">
+  <img src="./assets/wys_signature.gif" width="400" alt="作者签名"/>
+</p>
+
+<p align="center">
+  <a href="https://github.com/nexe-afk/changsha_mahjong">GitHub 项目地址</a> ·
+  v2.0.0 · 2026-05-21
+</p>
