@@ -212,6 +212,7 @@ adb install -r build/app/outputs/flutter-apk/app-debug.apk
 </p>
 
 <p align="center">
-  <a href="https://github.com/nexe-afk/changsha_mahjong">GitHub 项目地址</a> ·
-  v2.0.0 · 2026-05-21
+  <a href="https://github.com/nexe-afk/changsha_mahjong">GitHub</a> ·
+  <code>nexe-afk</code> ·
+  提交 <code>9e49dd8</code>
 </p>
