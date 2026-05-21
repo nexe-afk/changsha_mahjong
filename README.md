@@ -1,6 +1,10 @@
 # 长沙麻将网络版 — v2.0
 
 <p align="center">
+  <img src="wys签名.gif" alt="作者签名" width="200"/>
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/version-2.0.0-gold?style=flat-square&label=版本" alt="Version"/>
   <img src="https://img.shields.io/badge/Flutter-3.27-blue?style=flat-square&logo=flutter&label=Flutter" alt="Flutter"/>
   <img src="https://img.shields.io/badge/Node.js-20-green?style=flat-square&logo=node.js&label=Node" alt="Node"/>
