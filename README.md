@@ -5,14 +5,13 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.0.0-gold?style=flat-square&label=版本" alt="Version"/>
-  <img src="https://img.shields.io/badge/Flutter-3.27-blue?style=flat-square&logo=flutter&label=Flutter" alt="Flutter"/>
-  <img src="https://img.shields.io/badge/Node.js-20-green?style=flat-square&logo=node.js&label=Node" alt="Node"/>
-  <img src="https://img.shields.io/badge/TypeScript-5.0-3178C6?style=flat-square&logo=typescript&label=TS" alt="TypeScript"/>
-  <img src="https://img.shields.io/badge/Android-14-34A853?style=flat-square&logo=android&label=Android" alt="Android"/>
-  <img src="https://img.shields.io/badge/Docker-ready-2496ED?style=flat-square&logo=docker" alt="Docker"/>
-  <img src="https://img.shields.io/badge/license-MIT-orange?style=flat-square" alt="License"/>
-  <img src="https://img.shields.io/badge/PR-welcome-brightgreen?style=flat-square" alt="PR"/>
+  <code>v2.0.0</code>
+  · <code>Flutter 3.27</code>
+  · <code>Node 20</code>
+  · <code>TypeScript 5</code>
+  · <code>Android 14</code>
+  · <code>Docker</code>
+  · <code>MIT</code>
 </p>
 
 基于 **Flutter + Node.js (Express)** 构建的多人在线长沙麻将手机游戏，支持实时联机对战与 AI 对战。2.0 版本在 UI/UX、游戏规则、AI 系统和视觉特效方面进行了全面升级。
